@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { Home, Share2, Users, Crown, Star, RotateCw, Sword, Wrench, Stethoscope } from "lucide-react";
+import { Home, Share2, Users, Star, RotateCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CaptainIcon } from "./icons/captain-icon";
 import { ViceCaptainIcon } from "./icons/vice-captain-icon";
@@ -201,21 +201,21 @@ export default function RoomPage({ roomId }: { roomId: string }) {
             </CardHeader>
             <CardContent className="flex-grow flex flex-col items-center justify-center gap-4 text-center">
               {draftedCharacter ? (
-                <Card className="w-64 relative overflow-hidden shadow-lg">
+                <Card className="w-64 h-96 relative overflow-hidden shadow-lg">
                   <Image
                     src={draftedCharacter.imageUrl}
                     alt={draftedCharacter.info.name}
-                    width={400}
-                    height={600}
                     data-ai-hint={draftedCharacter.info.imageHint}
-                    className="w-full"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   />
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
                     <h3 className="text-white text-lg font-bold">{draftedCharacter.info.name}</h3>
                   </div>
                 </Card>
               ) : (
-                <div className="h-96 flex flex-col items-center justify-center text-muted-foreground">
+                <div className="w-64 h-96 flex flex-col items-center justify-center text-muted-foreground bg-card/50 rounded-lg">
                   <Users size={48} />
                   <p>Click draft to reveal a character</p>
                 </div>
