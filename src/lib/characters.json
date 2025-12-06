@@ -1,0 +1,183 @@
+
+[
+  {
+    "id": 1,
+    "name": "Monkey D. Luffy",
+    "description": "Captain of the Straw Hat Pirates."
+  },
+  {
+    "id": 2,
+    "name": "Roronoa Zoro",
+    "description": "The swordsman of the Straw Hat Pirates."
+  },
+  {
+    "id": 3,
+    "name": "Nami",
+    "description": "The navigator of the Straw Hat Pirates."
+  },
+  {
+    "id": 4,
+    "name": "Usopp",
+    "description": "The sniper of the Straw Hat Pirates."
+  },
+  {
+    "id": 5,
+    "name": "Sanji",
+    "description": "The cook of the Straw Hat Pirates."
+  },
+  {
+    "id": 6,
+    "name": "Tony Tony Chopper",
+    "description": "The doctor of the Straw Hat Pirates."
+  },
+  {
+    "id": 7,
+    "name": "Nico Robin",
+    "description": "The archaeologist of the Straw Hat Pirates."
+  },
+  {
+    "id": 8,
+    "name": "Franky",
+    "description": "The shipwright of the Straw Hat Pirates."
+  },
+  {
+    "id": 9,
+    "name": "Brook",
+    "description": "The musician of the Straw Hat Pirates."
+  },
+  {
+    "id": 10,
+    "name": "Jinbe",
+    "description": "The helmsman of the Straw Hat Pirates."
+  },
+  {
+    "id": 11,
+    "name": "Gol D. Roger",
+    "description": "The late King of the Pirates."
+  },
+  {
+    "id": 12,
+    "name": "Silvers Rayleigh",
+    "description": "The former first mate of the Roger Pirates."
+  },
+  {
+    "id": 13,
+    "name": "Shanks",
+    "description": "Captain of the Red Hair Pirates and one of the Four Emperors."
+  },
+  {
+    "id": 14,
+    "name": "Buggy",
+    "description": "Captain of the Buggy Pirates."
+  },
+  {
+    "id": 15,
+    "name": "Dracule Mihawk",
+    "description": "Holder of the title, 'Strongest Swordsman in the World'."
+  },
+  {
+    "id": 16,
+    "name": "Portgas D. Ace",
+    "description": "2nd division commander of the Whitebeard Pirates."
+  },
+  {
+    "id": 17,
+    "name": "Sabo",
+    "description": "The Chief of Staff of the Revolutionary Army."
+  },
+  {
+    "id": 18,
+    "name": "Trafalgar D. Water Law",
+    "description": "Captain and doctor of the Heart Pirates."
+  },
+  {
+    "id": 19,
+    "name": "Eustass Kid",
+    "description": "Captain of the Kid Pirates."
+  },
+  {
+    "id": 20,
+    "name": "Boa Hancock",
+    "description": "The captain of the Kuja Pirates."
+  },
+  { "id": 21, "name": "Edward Newgate" },
+  { "id": 22, "name": "Marshall D. Teach" },
+  { "id": 23, "name": "Kaido" },
+  { "id": 24, "name": "Charlotte Linlin" },
+  { "id": 25, "name": "Sengoku" },
+  { "id": 26, "name": "Monkey D. Garp" },
+  { "id": 27, "name": "Sakazuki" },
+  { "id": 28, "name": "Kuzan" },
+  { "id": 29, "name": "Borsalino" },
+  { "id": 30, "name": "Issho" },
+  { "id": 31, "name": "Aramaki" },
+  { "id": 32, "name": "Smoker" },
+  { "id": 33, "name": "Tashigi" },
+  { "id": 34, "name": "Crocodile" },
+  { "id": 35, "name": "Gecko Moria" },
+  { "id": 36, "name": "Donquixote Doflamingo" },
+  { "id": 37, "name": "Bartholomew Kuma" },
+  { "id": 38, "name": "Marco" },
+  { "id": 39, "name": "Jozu" },
+  { "id": 40, "name": "Vista" },
+  { "id": 41, "name": "Benn Beckman" },
+  { "id": 42, "name": "Lucky Roux" },
+  { "id": 43, "name": "Yasopp" },
+  { "id": 44, "name": "Monkey D. Dragon" },
+  { "id": 45, "name": "Emporio Ivankov" },
+  { "id": 46, "name": "Inazuma" },
+  { "id": 47, "name": "Nefertari Vivi" },
+  { "id": 48, "name": "Carue" },
+  { "id": 49, "name": "Koby" },
+  { "id": 50, "name": "Helmeppo" },
+  { "id": 51, "name": "Alvida" },
+  { "id": 52, "name": "Arlong" },
+  { "id": 53, "name": "Hatchan" },
+  { "id": 54, "name": "Don Krieg" },
+  { "id": 55, "name": "Gin" },
+  { "id": 56, "name": "Kuro" },
+  { "id": 57, "name": "Jango" },
+  { "id": 58, "name": "Wapol" },
+  { "id": 59, "name": "Dalton" },
+  { "id": 60, "name": "Dr. Kureha" },
+  { "id": 61, "name": "Enel" },
+  { "id": 62, "name": "Wiper" },
+  { "id": 63, "name": "Rob Lucci" },
+  { "id": 64, "name": "Kaku" },
+  { "id": 65, "name": "Jabra" },
+  { "id": 66, "name": "Blueno" },
+  { "id": 67, "name": "Spandam" },
+  { "id": 68, "name": "Perona" },
+  { "id": 69, "name": "Hogback" },
+  { "id": 70, "name": "Absalom" },
+  { "id": 71, "name": "Magellan" },
+  { "id": 72, "name": "Hannyabal" },
+  { "id": 73, "name": "Shiryu" },
+  { "id": 74, "name": "Hody Jones" },
+  { "id": 75, "name": "Vander Decken IX" },
+  { "id": 76, "name": "Caesar Clown" },
+  { "id": 77, "name": "Vergo" },
+  { "id": 78, "name": "Monet" },
+  { "id": 79, "name": "Cavendish" },
+  { "id": 80, "name": "Bartolomeo" },
+  { "id": 81, "name": "Don Sai" },
+  { "id": 82, "name": "Ideo" },
+  { "id": 83, "name": "Leo" },
+  { "id": 84, "name": "Hajrudin" },
+  { "id": 85, "name": "Orlumbus" },
+  { "id": 86, "name": "Charlotte Katakuri" },
+  { "id": 87, "name": "Charlotte Smoothie" },
+  { "id": 88, "name": "Charlotte Cracker" },
+  { "id": 89, "name": "King" },
+  { "id": 90, "name": "Queen" },
+  { "id": 91, "name": "Jack" },
+  { "id": 92, "name": "X Drake" },
+  { "id": 93, "name": "Page One" },
+  { "id": 94, "name": "Ulti" },
+  { "id": 95, "name": "Basil Hawkins" },
+  { "id": 96, "name": "Scratchmen Apoo" },
+  { "id": 97, "name": "Capone Bege" },
+  { "id": 98, "name": "Jewelry Bonney" },
+  { "id": 99, "name": "Urouge" },
+  { "id": 100, "name": "Kozuki Oden" }
+]

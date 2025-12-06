@@ -1,3 +1,4 @@
+import characters from './characters.json';
 
 export type Character = {
   id: number;
@@ -25,11 +26,7 @@ type ApiCharacter = {
 
 export const fetchAllCharacters = async (): Promise<Character[]> => {
     try {
-        const response = await fetch('https://cdn.jsdelivr.net/npm/one-piece-data@latest/characters.json');
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const chars: ApiCharacter[] = await response.json();
+        const chars: ApiCharacter[] = characters;
         
         // Let's take a sizeable slice of characters and map them to our simple Character type
         return chars.slice(0, 1000).map(char => ({
@@ -38,7 +35,7 @@ export const fetchAllCharacters = async (): Promise<Character[]> => {
             imageHint: char.name, // Use name for image hint
         }));
     } catch (error) {
-        console.error("Failed to fetch character data:", error);
+        console.error("Failed to load character data:", error);
         return []; // Return empty array on failure
     }
 }
