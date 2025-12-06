@@ -153,9 +153,9 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-headline">The Grand Line Draft</h1>
-          <p className="text-muted-foreground">
+          <div className="text-muted-foreground">
             Room Code: <Badge variant="secondary">{roomId}</Badge>
-          </p>
+          </div>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => router.push("/")}><Home className="mr-2 h-4 w-4"/>Home</Button>
