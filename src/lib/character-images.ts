@@ -20,10 +20,10 @@ export async function getCharImage(name: string): Promise<string> {
       return page.thumbnail.source;
     } else {
       console.warn(`No image for ${name}`);
-      return '/img_fallback.png';
+      return '/bmc_logo.png';
     }
   } catch (error) {
     console.error(`Fetch failed for ${name}:`, error);
-    return '/img_fallback.png';
+    return '/bmc_logo.png';
   }
 }

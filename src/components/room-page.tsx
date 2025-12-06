@@ -35,6 +35,7 @@ import { DoctorIcon } from "./icons/doctor-icon";
 import { ShipwrightIcon } from "./icons/shipwright-icon";
 import { CombatantIcon } from "./icons/combatant-icon";
 import { cn } from "@/lib/utils";
+import { Logo } from "./logo";
 
 type GamePhase = "drafting" | "swapping" | "voting" | "result";
 
@@ -77,7 +78,7 @@ const WantedPosterCard = ({
     character: DraftedCharacterState;
     children?: React.ReactNode
 }) => {
-    const hasImageIssue = character.imageUrl.includes('img_fallback.png');
+    const hasImageIssue = character.imageUrl.includes('bmc_logo.png');
     return (
         <div className="w-full h-full bg-card border-4 border-yellow-800/60 p-2 flex flex-col items-center gap-1 shadow-lg relative group">
             <h3 className="font-headline font-black text-2xl tracking-wider">WANTED</h3>
@@ -87,7 +88,10 @@ const WantedPosterCard = ({
                     alt={character.info.name}
                     data-ai-hint={character.info.imageHint}
                     fill
-                    className="object-cover object-top"
+                    className={cn(
+                        "object-cover",
+                        hasImageIssue ? "object-contain p-4" : "object-top"
+                    )}
                     sizes="(max-width: 768px) 120px, 120px"
                   />
             </div>
@@ -100,6 +104,16 @@ const WantedPosterCard = ({
         </div>
     )
 }
+
+const EmptyWantedPoster = () => {
+    return (
+        <div className="w-full h-full bg-card border-4 border-yellow-800/60 p-2 flex flex-col items-center justify-center gap-1 shadow-lg text-muted-foreground">
+             <Users size={48} />
+             <p className="text-center text-sm mt-2">Click draft to reveal a character</p>
+        </div>
+    )
+}
+
 
 export default function RoomPage({ roomId }: { roomId: string }) {
   const router = useRouter();
@@ -138,6 +152,10 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   );
 
   const drawCharacter = async () => {
+    if (characterPool.length === 0) {
+        toast({ title: "No more characters left in the pool!", variant: "destructive" });
+        return;
+    }
     const newPool = [...characterPool];
     const draftIndex = Math.floor(Math.random() * newPool.length);
     const character = newPool.splice(draftIndex, 1)[0];
@@ -256,7 +274,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
     const isSwapSource = swappingCharacterRole === role;
     const canBeSwapTarget = swappingCharacterRole !== null && swappingCharacterRole !== role;
-    const hasImageIssue = crewMember?.imageUrl.includes('img_fallback.png');
+    const hasImageIssue = crewMember?.imageUrl.includes('bmc_logo.png');
 
     return (
       <div key={role} className="flex flex-col items-center gap-2">
@@ -344,16 +362,13 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-grow flex flex-col items-center justify-center gap-4 text-center">
-                {draftedCharacter ? (
-                  <div className="w-64 h-96">
-                    <WantedPosterCard character={draftedCharacter} />
-                  </div>
-                ) : (
-                  <div className="w-64 h-96 aspect-[2/3] flex flex-col items-center justify-center text-muted-foreground bg-card/50 rounded-lg">
-                    <Users size={48} />
-                    <p>Click draft to reveal a character</p>
-                  </div>
-                )}
+                <div className="w-64 h-96">
+                    {draftedCharacter ? (
+                        <WantedPosterCard character={draftedCharacter} />
+                    ) : (
+                        <EmptyWantedPoster />
+                    )}
+                </div>
                 <Button onClick={handleDraft} disabled={!!draftedCharacter || crewIsFull} size="lg">
                   Draft Character
                 </Button>
