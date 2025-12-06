@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -8,6 +9,7 @@ import {
   Role,
   ROLES,
   generateCharacterPool,
+  fetchAllCharacters,
 } from "@/lib/characters";
 import { getCharImage } from "@/lib/character-images";
 import {
@@ -48,6 +50,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   const router = useRouter();
   const { toast } = useToast();
   const [phase, setPhase] = useState<GamePhase>("drafting");
+  const [allCharacters, setAllCharacters] = useState<Character[]>([]);
   const [characterPool, setCharacterPool] = useState<Character[]>([]);
   const [draftedCharacter, setDraftedCharacter] = useState<DraftedCharacterState | null>(
     null
@@ -60,8 +63,14 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   );
   const [finalScore, setFinalScore] = useState<number>(0);
 
+  const initializePool = async () => {
+    const fetchedChars = await fetchAllCharacters();
+    setAllCharacters(fetchedChars);
+    setCharacterPool(generateCharacterPool(fetchedChars, 50));
+  };
+  
   useEffect(() => {
-    setCharacterPool(generateCharacterPool(50));
+    initializePool();
   }, []);
 
   const crewIsFull = useMemo(
@@ -100,7 +109,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     }
   }, [crewIsFull]);
 
-  const handleSubmitRating = (rating: number) => {
+  const handleSubmitRating = (rating: number[]) => {
     // Simulate a score calculation
     const score = (rating[0] + (Math.random() * 3 + 7)) / 2;
     setFinalScore(score);
@@ -117,7 +126,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
   const handlePlayAgain = () => {
     setPhase("drafting");
-    setCharacterPool(generateCharacterPool(50));
+    setCharacterPool(generateCharacterPool(allCharacters, 50));
     setDraftedCharacter(null);
     setMyCrew(Object.fromEntries(ROLES.map(r => [r, null])) as Record<Role, DraftedCharacterState | null>);
     setFinalScore(0);

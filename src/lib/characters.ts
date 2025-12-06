@@ -1,49 +1,14 @@
-import characterPlaceholders from './placeholder-images.json';
 
 export type Character = {
-  id: string;
+  id: number;
   name: string;
-  image: string;
   imageHint: string;
 };
 
 export const ROLES = ["Captain", "Vice-Captain", "Navigator", "Sniper", "Cook"] as const;
 export type Role = (typeof ROLES)[number];
 
-const characterData: { id: string; name: string }[] = [
-  { id: "luffy", name: "Monkey D. Luffy" },
-  { id: "zoro", name: "Roronoa Zoro" },
-  { id: "nami", name: "Nami" },
-  { id: "usopp", name: "Usopp" },
-  { id: "sanji", name: "Sanji" },
-  { id: "chopper", name: "Tony Tony Chopper" },
-  { id: "robin", name: "Nico Robin" },
-  { id: "franky", name: "Franky" },
-  { id: "brook", name: "Brook" },
-  { id: "jinbe", name: "Jinbe" },
-  { id: "shanks", name: "Shanks" },
-  { id: "mihawk", name: "Dracule Mihawk" },
-  { id: "buggy", name: "Buggy" },
-  { id: "crocodile", name: "Crocodile" },
-  { id: "law", name: "Trafalgar Law" },
-];
-
-const placeholderMap = new Map(characterPlaceholders.placeholderImages.map(p => [p.id, p]));
-
-export const ALL_CHARACTERS: Character[] = characterData.map(char => {
-    const placeholder = placeholderMap.get(char.id);
-    if (!placeholder) {
-        throw new Error(`Placeholder for character ID '${char.id}' not found.`);
-    }
-    return {
-        id: char.id,
-        name: char.name,
-        image: placeholder.imageUrl,
-        imageHint: placeholder.imageHint,
-    }
-});
-
-export const shuffleArray = <T>(array: T[]): T[] => {
+const shuffleArray = <T>(array: T[]): T[] => {
   const newArray = [...array];
   for (let i = newArray.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -52,10 +17,36 @@ export const shuffleArray = <T>(array: T[]): T[] => {
   return newArray;
 };
 
-export const generateCharacterPool = (size: number = 50): Character[] => {
-    let pool: Character[] = [];
-    while (pool.length < size) {
-        pool = [...pool, ...ALL_CHARACTERS];
+type ApiCharacter = {
+    id: number;
+    name: string;
+    [key: string]: any;
+}
+
+export const fetchAllCharacters = async (): Promise<Character[]> => {
+    try {
+        const response = await fetch('https://cdn.jsdelivr.net/npm/one-piece-data@latest/all.json');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const chars: ApiCharacter[] = await response.json();
+        
+        // Let's take a sizeable slice of characters and map them to our simple Character type
+        return chars.slice(0, 1000).map(char => ({
+            id: char.id,
+            name: char.name,
+            imageHint: char.name, // Use name for image hint
+        }));
+    } catch (error) {
+        console.error("Failed to fetch character data:", error);
+        return []; // Return empty array on failure
     }
-    return shuffleArray(pool).slice(0, size);
+}
+
+
+export const generateCharacterPool = (allCharacters: Character[], size: number = 50): Character[] => {
+    if (allCharacters.length === 0) return [];
+    // Shuffle the array and take a slice of the specified size
+    // This ensures no duplicates in the generated pool
+    return shuffleArray(allCharacters).slice(0, size);
 }
