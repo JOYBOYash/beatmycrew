@@ -6,7 +6,7 @@
   :root {
     --background: 48 55% 95%; /* Pale Sand */
     --foreground: 20 15% 25%; /* Dark Brown-Black for text */
-    --card: 48 33% 92%; /* Slightly darker sand for cards */
+    --card: 40 33% 82%; /* Parchment for cards */
     --card-foreground: 20 15% 25%;
     --popover: 48 55% 95%;
     --popover-foreground: 20 15% 25%;

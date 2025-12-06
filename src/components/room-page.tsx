@@ -70,6 +70,37 @@ const addReportedIssue = (characterName: string) => {
     }
 };
 
+const WantedPosterCard = ({
+    character,
+    children
+}: {
+    character: DraftedCharacterState;
+    children?: React.ReactNode
+}) => {
+    const hasImageIssue = character.imageUrl.includes('img_fallback.png');
+    return (
+        <div className="w-full h-full bg-card border-4 border-yellow-800/60 p-2 flex flex-col items-center gap-1 shadow-lg relative group">
+            <h3 className="font-headline font-black text-2xl tracking-wider">WANTED</h3>
+            <div className="w-full h-32 relative bg-black/10 border-2 border-yellow-800/60">
+                 <Image
+                    src={character.imageUrl}
+                    alt={character.info.name}
+                    data-ai-hint={character.info.imageHint}
+                    fill
+                    className="object-cover object-top"
+                    sizes="(max-width: 768px) 120px, 120px"
+                  />
+            </div>
+            <p className="font-headline text-xs">DEAD OR ALIVE</p>
+            <p className="font-headline font-bold text-lg leading-tight truncate w-full text-center">
+                {character.info.name}
+            </p>
+            {children}
+            {hasImageIssue && children}
+        </div>
+    )
+}
+
 export default function RoomPage({ roomId }: { roomId: string }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -137,6 +168,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
     setMyCrew((prev) => ({ ...prev, [role]: draftedCharacter }));
     setDraftedCharacter(null);
+    setHasRerolled(false);
   };
   
   useEffect(() => {
@@ -232,39 +264,19 @@ export default function RoomPage({ roomId }: { roomId: string }) {
           <Icon className="w-5 h-5" />
           <h4 className="font-semibold text-sm">{role}</h4>
         </div>
-        <Card
+        <div
           onClick={() => canBeSwapTarget && handlePerformSwap(role)}
           className={cn(
-            "w-[120px] h-[180px] flex items-center justify-center relative overflow-hidden bg-card/50 group",
+            "w-[140px] h-[220px] relative group",
             {
               "cursor-pointer hover:ring-2 hover:ring-primary": canBeSwapTarget,
-              "ring-2 ring-accent ring-offset-2 ring-offset-background": isSwapSource,
+              "ring-2 ring-accent ring-offset-2 ring-offset-background rounded-lg": isSwapSource,
             }
           )}
         >
           {crewMember ? (
-            <>
-              <Image
-                src={crewMember.imageUrl}
-                alt={crewMember.info.name}
-                data-ai-hint={crewMember.info.imageHint}
-                fill
-                className="object-cover object-top transition-transform duration-300 group-hover:scale-105"
-                sizes="(max-width: 768px) 120px, 120px"
-              />
-               <Image
-                src="/wanted.png"
-                alt="Wanted Poster"
-                fill
-                className="z-10 pointer-events-none"
-                sizes="(max-width: 768px) 120px, 120px"
-              />
-              <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1 text-center z-20">
-                <p className="text-white text-xs font-bold truncate">
-                  {crewMember.info.name}
-                </p>
-              </div>
-              {!isVotingPhase && phase === 'swapping' && !hasSwapped && (
+            <WantedPosterCard character={crewMember}>
+                {!isVotingPhase && phase === 'swapping' && !hasSwapped && (
                 <Button
                     size="icon"
                     variant="ghost"
@@ -282,7 +294,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                  <Button
                     size="sm"
                     variant="destructive"
-                    className="absolute top-1 left-1 h-auto p-1 text-xs opacity-0 group-hover:opacity-100 z-20"
+                    className="absolute bottom-1 right-1 h-auto p-1 text-xs opacity-0 group-hover:opacity-100 z-20"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleReportIssue(crewMember.info.name)
@@ -292,11 +304,11 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                     <AlertTriangle className="w-3 h-3 mr-1" /> Report
                  </Button>
               )}
-            </>
+            </WantedPosterCard>
           ) : (
-            <div className="text-muted-foreground text-2xl">?</div>
+             <div className="w-[140px] h-[220px] flex items-center justify-center relative overflow-hidden bg-card/50 group border-4 border-yellow-800/60 p-2 text-muted-foreground text-2xl">?</div>
           )}
-        </Card>
+        </div>
       </div>
     );
   };
@@ -333,26 +345,9 @@ export default function RoomPage({ roomId }: { roomId: string }) {
               </CardHeader>
               <CardContent className="flex-grow flex flex-col items-center justify-center gap-4 text-center">
                 {draftedCharacter ? (
-                  <Card className="w-64 h-96 aspect-[2/3] relative overflow-hidden shadow-lg">
-                    <Image
-                      src={draftedCharacter.imageUrl}
-                      alt={draftedCharacter.info.name}
-                      data-ai-hint={draftedCharacter.info.imageHint}
-                      fill
-                      className="object-cover object-top"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    />
-                    <Image
-                      src="/wanted.png"
-                      alt="Wanted Poster"
-                      fill
-                      className="z-10 pointer-events-none"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    />
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 z-20">
-                      <h3 className="text-white text-lg font-bold">{draftedCharacter.info.name}</h3>
-                    </div>
-                  </Card>
+                  <div className="w-64 h-96">
+                    <WantedPosterCard character={draftedCharacter} />
+                  </div>
                 ) : (
                   <div className="w-64 h-96 aspect-[2/3] flex flex-col items-center justify-center text-muted-foreground bg-card/50 rounded-lg">
                     <Users size={48} />
@@ -470,5 +465,3 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     </div>
   );
 }
-
-    
