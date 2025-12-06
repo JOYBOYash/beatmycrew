@@ -9,6 +9,7 @@ import {
   ROLES,
   generateCharacterPool,
 } from "@/lib/characters";
+import { getCharImage } from "@/lib/character-images";
 import {
   Card,
   CardContent,
@@ -38,18 +39,23 @@ const roleIcons: Record<Role, React.ComponentType<{ className?: string }>> = {
   Cook: CookIcon,
 };
 
+type DraftedCharacterState = {
+  info: Character;
+  imageUrl: string;
+};
+
 export default function RoomPage({ roomId }: { roomId: string }) {
   const router = useRouter();
   const { toast } = useToast();
   const [phase, setPhase] = useState<GamePhase>("drafting");
   const [characterPool, setCharacterPool] = useState<Character[]>([]);
-  const [draftedCharacter, setDraftedCharacter] = useState<Character | null>(
+  const [draftedCharacter, setDraftedCharacter] = useState<DraftedCharacterState | null>(
     null
   );
-  const [myCrew, setMyCrew] = useState<Record<Role, Character | null>>(
+  const [myCrew, setMyCrew] = useState<Record<Role, DraftedCharacterState | null>>(
     Object.fromEntries(ROLES.map((r) => [r, null])) as Record<
       Role,
-      Character | null
+      DraftedCharacterState | null
     >
   );
   const [finalScore, setFinalScore] = useState<number>(0);
@@ -68,13 +74,16 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     [myCrew]
   );
 
-  const handleDraft = () => {
+  const handleDraft = async () => {
     if (draftedCharacter) return;
     if (characterPool.length > 0) {
       const newPool = [...characterPool];
       const draftIndex = Math.floor(Math.random() * newPool.length);
       const character = newPool.splice(draftIndex, 1)[0];
-      setDraftedCharacter(character);
+      
+      const imageUrl = await getCharImage(character.name);
+      
+      setDraftedCharacter({ info: character, imageUrl });
       setCharacterPool(newPool);
     }
   };
@@ -110,12 +119,12 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     setPhase("drafting");
     setCharacterPool(generateCharacterPool(50));
     setDraftedCharacter(null);
-    setMyCrew(Object.fromEntries(ROLES.map(r => [r, null])) as Record<Role, Character | null>);
+    setMyCrew(Object.fromEntries(ROLES.map(r => [r, null])) as Record<Role, DraftedCharacterState | null>);
     setFinalScore(0);
   }
 
   const renderCrewMember = (role: Role) => {
-    const character = myCrew[role];
+    const crewMember = myCrew[role];
     const Icon = roleIcons[role];
 
     return (
@@ -125,18 +134,18 @@ export default function RoomPage({ roomId }: { roomId: string }) {
           <h4 className="font-semibold text-sm">{role}</h4>
         </div>
         <Card className="w-full h-48 flex items-center justify-center relative overflow-hidden bg-card/50">
-          {character ? (
+          {crewMember ? (
             <>
               <Image
-                src={character.image}
-                alt={character.name}
-                data-ai-hint={character.imageHint}
+                src={crewMember.imageUrl}
+                alt={crewMember.info.name}
+                data-ai-hint={crewMember.info.imageHint}
                 fill
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
               />
               <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-2 text-center">
                 <p className="text-white text-xs font-bold truncate">
-                  {character.name}
+                  {crewMember.info.name}
                 </p>
               </div>
             </>
@@ -178,15 +187,15 @@ export default function RoomPage({ roomId }: { roomId: string }) {
               {draftedCharacter ? (
                 <Card className="w-64 relative overflow-hidden shadow-lg">
                   <Image
-                    src={draftedCharacter.image}
-                    alt={draftedCharacter.name}
+                    src={draftedCharacter.imageUrl}
+                    alt={draftedCharacter.info.name}
                     width={400}
                     height={600}
-                    data-ai-hint={draftedCharacter.imageHint}
+                    data-ai-hint={draftedCharacter.info.imageHint}
                     className="w-full"
                   />
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                    <h3 className="text-white text-lg font-bold">{draftedCharacter.name}</h3>
+                    <h3 className="text-white text-lg font-bold">{draftedCharacter.info.name}</h3>
                   </div>
                 </Card>
               ) : (
