@@ -1,3 +1,94 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "luffy",
+      "description": "Monkey D. Luffy placeholder image",
+      "imageUrl": "https://images.unsplash.com/photo-1709291083287-145a389442d8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxNb25rZXklMjBELiUyMEx1ZmZ5fGVufDB8fHx8MTc2NTAzODk5NHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Monkey D. Luffy"
+    },
+    {
+      "id": "zoro",
+      "description": "Roronoa Zoro placeholder image",
+      "imageUrl": "https://images.unsplash.com/photo-1658233427270-ba4d9d03b53c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxSb3Jvbm9hJTIwWm9yb3xlbnwwfHx8fDE3NjUwMzg5OTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Roronoa Zoro"
+    },
+    {
+      "id": "nami",
+      "description": "Nami placeholder image",
+      "imageUrl": "https://images.unsplash.com/photo-1623183066040-b4b9ffd97766?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxOYW1pfGVufDB8fHx8MTc2NTAzODk5NHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Nami"
+    },
+    {
+      "id": "usopp",
+      "description": "Usopp placeholder image",
+      "imageUrl": "https://picsum.photos/seed/usopp/400/600",
+      "imageHint": "Usopp"
+    },
+    {
+      "id": "sanji",
+      "description": "Sanji placeholder image",
+      "imageUrl": "https://images.unsplash.com/photo-1625262550495-1d3bfb5c1502?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxTYW5qaXxlbnwwfHx8fDE3NjUwMzg5OTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Sanji"
+    },
+    {
+      "id": "chopper",
+      "description": "Tony Tony Chopper placeholder image",
+      "imageUrl": "https://images.unsplash.com/photo-1635764963325-f1d93ca922a3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxUb255JTIwVG9ueSUyMENob3BwZXJ8ZW58MHx8fHwxNzY1MDM4OTk0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Tony Tony Chopper"
+    },
+    {
+      "id": "robin",
+      "description": "Nico Robin placeholder image",
+      "imageUrl": "https://images.unsplash.com/photo-1600865869069-638935377a06?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxOaWNvJTIwUm9iaW58ZW58MHx8fHwxNzY1MDM4OTk0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Nico Robin"
+    },
+    {
+      "id": "franky",
+      "description": "Franky placeholder image",
+      "imageUrl": "https://images.unsplash.com/photo-1651862317433-2a9debaac211?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxGcmFua3l8ZW58MHx8fHwxNzY1MDM4OTk0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Franky"
+    },
+    {
+      "id": "brook",
+      "description": "Brook placeholder image",
+      "imageUrl": "https://images.unsplash.com/photo-1620132180252-1a18d93f44c9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxCcm9va3xlbnwwfHx8fDE3NjUwMzg5OTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Brook"
+    },
+    {
+      "id": "jinbe",
+      "description": "Jinbe placeholder image",
+      "imageUrl": "https://picsum.photos/seed/jinbe/400/600",
+      "imageHint": "Jinbe"
+    },
+    {
+      "id": "shanks",
+      "description": "Shanks placeholder image",
+      "imageUrl": "https://images.unsplash.com/photo-1750707878397-9f570f48e2cd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxTaGFua3N8ZW58MHx8fHwxNzY1MDM4OTk0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Shanks"
+    },
+    {
+      "id": "mihawk",
+      "description": "Dracule Mihawk placeholder image",
+      "imageUrl": "https://images.unsplash.com/photo-1725216548619-4991eef17126?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxEcmFjdWxlJTIwTWloYXdrfGVufDB8fHx8MTc2NTAzODk5NHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Dracule Mihawk"
+    },
+    {
+      "id": "buggy",
+      "description": "Buggy the Clown placeholder image",
+      "imageUrl": "https://images.unsplash.com/photo-1517962140171-2dfc01caecb7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxCdWdneXxlbnwwfHx8fDE3NjUwMzg5OTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Buggy"
+    },
+    {
+      "id": "crocodile",
+      "description": "Crocodile placeholder image",
+      "imageUrl": "https://images.unsplash.com/photo-1611069648374-733e7bb73e5c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxDcm9jb2RpbGV8ZW58MHx8fHwxNzY1MDM4OTk0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Crocodile"
+    },
+    {
+      "id": "law",
+      "description": "Trafalgar D. Water Law placeholder image",
+      "imageUrl": "https://images.unsplash.com/photo-1602278885642-5d013c626d60?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxUcmFmYWxnYXIlMjBMYXd8ZW58MHx8fHwxNzY1MDM4OTk0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Trafalgar Law"
+    }
+  ]
 }
