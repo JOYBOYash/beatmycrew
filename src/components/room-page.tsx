@@ -156,7 +156,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 alt={crewMember.info.name}
                 data-ai-hint={crewMember.info.imageHint}
                 fill
-                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                className="object-cover object-top transition-transform duration-300 group-hover:scale-105"
                 sizes="(max-width: 768px) 120px, 120px"
               />
               <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1 text-center">
@@ -207,7 +207,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                     alt={draftedCharacter.info.name}
                     data-ai-hint={draftedCharacter.info.imageHint}
                     fill
-                    className="object-cover"
+                    className="object-cover object-top"
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   />
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
