@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { Home, Share2, Users, Star, RotateCw } from "lucide-react";
+import { Home, Share2, Users, Star, RotateCw, Replace, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CaptainIcon } from "./icons/captain-icon";
 import { ViceCaptainIcon } from "./icons/vice-captain-icon";
@@ -33,6 +33,7 @@ import { CookIcon } from "./icons/cook-icon";
 import { DoctorIcon } from "./icons/doctor-icon";
 import { ShipwrightIcon } from "./icons/shipwright-icon";
 import { CombatantIcon } from "./icons/combatant-icon";
+import { cn } from "@/lib/utils";
 
 type GamePhase = "drafting" | "voting" | "result";
 
@@ -68,6 +69,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     >
   );
   const [finalScore, setFinalScore] = useState<number>(0);
+  const [swappingCharacterRole, setSwappingCharacterRole] = useState<Role | null>(null);
 
   const initializePool = async () => {
     const fetchedChars = await fetchAllCharacters();
@@ -105,15 +107,24 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
   const handleAssignRole = (role: Role) => {
     if (!draftedCharacter) return;
-    setMyCrew((prev) => ({ ...prev, [role]: draftedCharacter }));
-    setDraftedCharacter(null);
+
+    if (swappingCharacterRole) { // If in swap mode, and user assigns a role to a new character
+      const sourceCharacter = myCrew[swappingCharacterRole];
+      const newCrew = { ...myCrew, [swappingCharacterRole]: draftedCharacter, [role]: sourceCharacter };
+      setMyCrew(newCrew);
+      setDraftedCharacter(null);
+      setSwappingCharacterRole(null);
+    } else {
+      setMyCrew((prev) => ({ ...prev, [role]: draftedCharacter }));
+      setDraftedCharacter(null);
+    }
   };
   
   useEffect(() => {
-    if (crewIsFull) {
+    if (crewIsFull && !swappingCharacterRole) {
       setPhase("voting");
     }
-  }, [crewIsFull]);
+  }, [crewIsFull, swappingCharacterRole]);
 
   const handleSubmitRating = (rating: number[]) => {
     // Simulate a score calculation
@@ -132,15 +143,59 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
   const handlePlayAgain = () => {
     setPhase("drafting");
-    setCharacterPool(generateCharacterPool(allCharacters, 50));
+    initializePool();
     setDraftedCharacter(null);
     setMyCrew(Object.fromEntries(ROLES.map(r => [r, null])) as Record<Role, DraftedCharacterState | null>);
     setFinalScore(0);
+    setSwappingCharacterRole(null);
   }
+
+  const handleInitiateSwap = (role: Role) => {
+    if (draftedCharacter) {
+      // If a character is drafted, a swap click will replace the character in the role.
+      const oldCharacter = myCrew[role];
+      const newCrew = { ...myCrew, [role]: draftedCharacter };
+      setMyCrew(newCrew);
+      if (oldCharacter) {
+        setDraftedCharacter(oldCharacter);
+      } else {
+        setDraftedCharacter(null);
+      }
+    } else {
+       setSwappingCharacterRole(role);
+    }
+  };
+  
+  const handlePerformSwap = (targetRole: Role) => {
+    if (!swappingCharacterRole) return;
+  
+    if (swappingCharacterRole === targetRole) {
+      setSwappingCharacterRole(null); // Deselect if clicking the same character
+      return;
+    }
+  
+    const sourceCharacter = myCrew[swappingCharacterRole];
+    const targetCharacter = myCrew[targetRole];
+  
+    const newCrew = { ...myCrew };
+    newCrew[swappingCharacterRole] = targetCharacter;
+    newCrew[targetRole] = sourceCharacter;
+  
+    setMyCrew(newCrew);
+    setSwappingCharacterRole(null);
+  };
+  
+  const handleCancelSwap = () => {
+    setSwappingCharacterRole(null);
+  };
 
   const renderCrewMember = (role: Role) => {
     const crewMember = myCrew[role];
     const Icon = roleIcons[role];
+
+    const isSwapSource = swappingCharacterRole === role;
+    const isSwapTarget = swappingCharacterRole !== null && swappingCharacterRole !== role && crewMember !== null;
+
 
     return (
       <div key={role} className="flex flex-col items-center gap-2">
@@ -148,7 +203,16 @@ export default function RoomPage({ roomId }: { roomId: string }) {
           <Icon className="w-5 h-5" />
           <h4 className="font-semibold text-sm">{role}</h4>
         </div>
-        <Card className="w-[120px] h-[180px] flex items-center justify-center relative overflow-hidden bg-card/50">
+        <Card
+          onClick={() => swappingCharacterRole && handlePerformSwap(role)}
+          className={cn(
+            "w-[120px] h-[180px] flex items-center justify-center relative overflow-hidden bg-card/50 group",
+            {
+              "cursor-pointer hover:ring-2 hover:ring-primary": isSwapTarget,
+              "ring-2 ring-accent ring-offset-2 ring-offset-background": isSwapSource,
+            }
+          )}
+        >
           {crewMember ? (
             <>
               <Image
@@ -164,6 +228,20 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                   {crewMember.info.name}
                 </p>
               </div>
+              {!swappingCharacterRole && !draftedCharacter && (
+                <Button
+                    size="icon"
+                    variant="ghost"
+                    className="absolute top-1 right-1 h-7 w-7 bg-black/50 text-white opacity-0 group-hover:opacity-100 hover:bg-black/70"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleInitiateSwap(role);
+                    }}
+                    title={`Swap ${crewMember.info.name}`}
+                >
+                    <Replace className="w-4 h-4" />
+                </Button>
+              )}
             </>
           ) : (
             <div className="text-muted-foreground text-2xl">?</div>
@@ -225,8 +303,11 @@ export default function RoomPage({ roomId }: { roomId: string }) {
               </Button>
               {draftedCharacter && (
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 mt-4">
-                    {ROLES.filter(r => !assignedRoles.includes(r)).map(role => (
+                    {ROLES.filter(r => !assignedRoles.includes(r) || myCrew[r] === null).map(role => (
                         <Button key={role} variant="secondary" onClick={() => handleAssignRole(role)}>Assign to {role}</Button>
+                    ))}
+                    {assignedRoles.map(role => (
+                        <Button key={`replace-${role}`} variant="outline" onClick={() => handleInitiateSwap(role)}>Replace {role}</Button>
                     ))}
                 </div>
               )}
@@ -235,8 +316,20 @@ export default function RoomPage({ roomId }: { roomId: string }) {
           
           <Card>
             <CardHeader>
-              <CardTitle>Your Crew</CardTitle>
-              <CardDescription>Fill all {ROLES.length} positions to complete your crew.</CardDescription>
+              <CardTitle>
+                {swappingCharacterRole ? "Swapping Mode" : "Your Crew"}
+              </CardTitle>
+              <CardDescription>
+                {swappingCharacterRole 
+                  ? `Select a crew member to swap with ${myCrew[swappingCharacterRole]?.info.name}.`
+                  : `Fill all ${ROLES.length} positions to complete your crew.`
+                }
+              </CardDescription>
+              {swappingCharacterRole && (
+                <Button variant="outline" size="sm" onClick={handleCancelSwap} className="w-fit">
+                    <X className="mr-2 h-4 w-4" /> Cancel Swap
+                </Button>
+              )}
             </CardHeader>
             <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {ROLES.map(renderCrewMember)}
@@ -288,3 +381,5 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     </div>
   );
 }
+
+    
