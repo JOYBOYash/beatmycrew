@@ -23,13 +23,16 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { Home, Share2, Users, Crown, Star, RotateCw } from "lucide-react";
+import { Home, Share2, Users, Crown, Star, RotateCw, Sword, Wrench, Stethoscope } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CaptainIcon } from "./icons/captain-icon";
 import { ViceCaptainIcon } from "./icons/vice-captain-icon";
 import { NavigatorIcon } from "./icons/navigator-icon";
 import { SniperIcon } from "./icons/sniper-icon";
 import { CookIcon } from "./icons/cook-icon";
+import { DoctorIcon } from "./icons/doctor-icon";
+import { ShipwrightIcon } from "./icons/shipwright-icon";
+import { CombatantIcon } from "./icons/combatant-icon";
 
 type GamePhase = "drafting" | "voting" | "result";
 
@@ -39,6 +42,9 @@ const roleIcons: Record<Role, React.ComponentType<{ className?: string }>> = {
   Navigator: NavigatorIcon,
   Sniper: SniperIcon,
   Cook: CookIcon,
+  Doctor: DoctorIcon,
+  Shipwright: ShipwrightIcon,
+  Combatant: CombatantIcon,
 };
 
 type DraftedCharacterState = {
@@ -142,7 +148,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
           <Icon className="w-5 h-5" />
           <h4 className="font-semibold text-sm">{role}</h4>
         </div>
-        <Card className="w-full h-48 flex items-center justify-center relative overflow-hidden bg-card/50">
+        <Card className="w-[120px] h-[180px] flex items-center justify-center relative overflow-hidden bg-card/50">
           {crewMember ? (
             <>
               <Image
@@ -151,8 +157,9 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 data-ai-hint={crewMember.info.imageHint}
                 fill
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
+                sizes="(max-width: 768px) 120px, 120px"
               />
-              <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-2 text-center">
+              <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-1 text-center">
                 <p className="text-white text-xs font-bold truncate">
                   {crewMember.info.name}
                 </p>
@@ -229,9 +236,9 @@ export default function RoomPage({ roomId }: { roomId: string }) {
           <Card>
             <CardHeader>
               <CardTitle>Your Crew</CardTitle>
-              <CardDescription>Fill all 5 positions to complete your crew.</CardDescription>
+              <CardDescription>Fill all {ROLES.length} positions to complete your crew.</CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <CardContent className="grid grid-cols-3 md:grid-cols-4 gap-4">
                 {ROLES.map(renderCrewMember)}
             </CardContent>
           </Card>
@@ -249,7 +256,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mb-8">
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-4 mb-8">
                     {ROLES.map(renderCrewMember)}
                 </div>
 

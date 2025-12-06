@@ -1,3 +1,4 @@
+
 import characters from './characters.json';
 
 export type Character = {
@@ -6,7 +7,7 @@ export type Character = {
   imageHint: string;
 };
 
-export const ROLES = ["Captain", "Vice-Captain", "Navigator", "Sniper", "Cook"] as const;
+export const ROLES = ["Captain", "Vice-Captain", "Navigator", "Sniper", "Cook", "Doctor", "Shipwright", "Combatant"] as const;
 export type Role = (typeof ROLES)[number];
 
 const shuffleArray = <T>(array: T[]): T[] => {
@@ -28,22 +29,19 @@ export const fetchAllCharacters = async (): Promise<Character[]> => {
     try {
         const chars: ApiCharacter[] = characters;
         
-        // Let's take a sizeable slice of characters and map them to our simple Character type
-        return chars.slice(0, 1000).map(char => ({
+        return chars.map(char => ({
             id: char.id,
             name: char.name,
-            imageHint: char.name, // Use name for image hint
+            imageHint: char.name, 
         }));
     } catch (error) {
         console.error("Failed to load character data:", error);
-        return []; // Return empty array on failure
+        return []; 
     }
 }
 
 
 export const generateCharacterPool = (allCharacters: Character[], size: number = 50): Character[] => {
     if (allCharacters.length === 0) return [];
-    // Shuffle the array and take a slice of the specified size
-    // This ensures no duplicates in the generated pool
     return shuffleArray(allCharacters).slice(0, size);
 }
