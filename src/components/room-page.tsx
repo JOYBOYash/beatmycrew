@@ -73,26 +73,33 @@ const addReportedIssue = (characterName: string) => {
 
 const WantedPosterCard = ({
     character,
-    children
+    children,
+    onImageError,
+    hasError,
 }: {
     character: DraftedCharacterState;
-    children?: React.ReactNode
+    children?: React.ReactNode;
+    onImageError: () => void;
+    hasError: boolean;
 }) => {
-    const hasImageIssue = character.imageUrl.includes('bmc_logo.png');
+    const isApiFallback = character.imageUrl.includes('bmc_logo.png');
+    const showFallback = isApiFallback || hasError;
+
     return (
         <div className="w-full h-full bg-card border-4 border-yellow-800/60 p-2 flex flex-col items-center gap-1 shadow-lg relative group">
             <h3 className="font-headline font-black text-2xl tracking-wider">WANTED</h3>
             <div className="w-full h-32 relative bg-black/10 border-2 border-yellow-800/60">
                  <Image
-                    src={character.imageUrl}
+                    src={showFallback ? '/bmc_logo.png' : character.imageUrl}
                     alt={character.info.name}
                     data-ai-hint={character.info.imageHint}
                     fill
                     className={cn(
                         "object-cover",
-                        hasImageIssue ? "object-contain p-4" : "object-top"
+                        showFallback ? "object-contain p-4" : "object-top"
                     )}
                     sizes="(max-width: 768px) 120px, 120px"
+                    onError={onImageError}
                   />
             </div>
             <p className="font-headline text-xs">DEAD OR ALIVE</p>
@@ -100,7 +107,7 @@ const WantedPosterCard = ({
                 {character.info.name}
             </p>
             {children}
-            {hasImageIssue && children}
+            {isApiFallback && children}
         </div>
     )
 }
@@ -135,6 +142,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   const [hasSwapped, setHasSwapped] = useState(false);
   const [hasRerolled, setHasRerolled] = useState(false);
   const [locallyReported, setLocallyReported] = useState<string[]>(getReportedIssues());
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
   const initializePool = async () => {
     const fetchedChars = await fetchAllCharacters();
@@ -220,6 +228,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     setHasSwapped(false);
     setHasRerolled(false);
     setLocallyReported(getReportedIssues());
+    setImageErrors({});
   }
 
   const handleInitiateSwap = (role: Role) => {
@@ -267,6 +276,10 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       });
     }
   };
+  
+  const handleImageError = (characterName: string) => {
+    setImageErrors(prev => ({ ...prev, [characterName]: true }));
+  }
 
   const renderCrewMember = (role: Role, isVotingPhase: boolean = false) => {
     const crewMember = myCrew[role];
@@ -274,7 +287,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
     const isSwapSource = swappingCharacterRole === role;
     const canBeSwapTarget = swappingCharacterRole !== null && swappingCharacterRole !== role;
-    const hasImageIssue = crewMember?.imageUrl.includes('bmc_logo.png');
+    const isApiFallback = crewMember?.imageUrl.includes('bmc_logo.png');
 
     return (
       <div key={role} className="flex flex-col items-center gap-2">
@@ -293,7 +306,11 @@ export default function RoomPage({ roomId }: { roomId: string }) {
           )}
         >
           {crewMember ? (
-            <WantedPosterCard character={crewMember}>
+            <WantedPosterCard 
+              character={crewMember}
+              onImageError={() => handleImageError(crewMember.info.name)}
+              hasError={!!imageErrors[crewMember.info.name]}
+            >
                 {!isVotingPhase && phase === 'swapping' && !hasSwapped && (
                 <Button
                     size="icon"
@@ -308,7 +325,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                     <Replace className="w-4 h-4" />
                 </Button>
               )}
-              {hasImageIssue && !locallyReported.includes(crewMember.info.name) && (
+              {isApiFallback && !locallyReported.includes(crewMember.info.name) && (
                  <Button
                     size="sm"
                     variant="destructive"
