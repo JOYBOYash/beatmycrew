@@ -224,7 +224,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
     const isSwapSource = swappingCharacterRole === role;
     const canBeSwapTarget = swappingCharacterRole !== null && swappingCharacterRole !== role;
-    const hasImageIssue = crewMember?.imageUrl.includes('placehold.co');
+    const hasImageIssue = crewMember?.imageUrl.includes('img_fallback.png');
 
     return (
       <div key={role} className="flex flex-col items-center gap-2">
@@ -252,7 +252,14 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 className="object-cover object-top transition-transform duration-300 group-hover:scale-105"
                 sizes="(max-width: 768px) 120px, 120px"
               />
-              <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1 text-center">
+               <Image
+                src="/wanted.png"
+                alt="Wanted Poster"
+                fill
+                className="z-10 pointer-events-none"
+                sizes="(max-width: 768px) 120px, 120px"
+              />
+              <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1 text-center z-20">
                 <p className="text-white text-xs font-bold truncate">
                   {crewMember.info.name}
                 </p>
@@ -261,7 +268,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 <Button
                     size="icon"
                     variant="ghost"
-                    className="absolute top-1 right-1 h-7 w-7 bg-black/50 text-white opacity-0 group-hover:opacity-100 hover:bg-black/70"
+                    className="absolute top-1 right-1 h-7 w-7 bg-black/50 text-white opacity-0 group-hover:opacity-100 hover:bg-black/70 z-20"
                     onClick={(e) => {
                         e.stopPropagation();
                         handleInitiateSwap(role);
@@ -275,7 +282,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                  <Button
                     size="sm"
                     variant="destructive"
-                    className="absolute top-1 left-1 h-auto p-1 text-xs opacity-0 group-hover:opacity-100"
+                    className="absolute top-1 left-1 h-auto p-1 text-xs opacity-0 group-hover:opacity-100 z-20"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleReportIssue(crewMember.info.name)
@@ -335,7 +342,14 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                       className="object-cover object-top"
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     />
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                    <Image
+                      src="/wanted.png"
+                      alt="Wanted Poster"
+                      fill
+                      className="z-10 pointer-events-none"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 z-20">
                       <h3 className="text-white text-lg font-bold">{draftedCharacter.info.name}</h3>
                     </div>
                   </Card>

@@ -20,10 +20,10 @@ export async function getCharImage(name: string): Promise<string> {
       return page.thumbnail.source;
     } else {
       console.warn(`No image for ${name}`);
-      return 'https://placehold.co/400x600/F4D03F/000000?text=No+Image';
+      return '/img_fallback.png';
     }
   } catch (error) {
     console.error(`Fetch failed for ${name}:`, error);
-    return 'https://placehold.co/400x600/E63946/FFFFFF?text=Error';
+    return '/img_fallback.png';
   }
 }
