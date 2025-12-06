@@ -75,7 +75,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   const initializePool = async () => {
     const fetchedChars = await fetchAllCharacters();
     setAllCharacters(fetchedChars);
-    setCharacterPool(generateCharacterPool(fetchedChars, 50));
+    setCharacterPool(generateCharacterPool(fetchedChars, 100));
   };
   
   useEffect(() => {
@@ -93,29 +93,26 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   );
 
   const handleDraft = async () => {
-    if (draftedCharacter) return;
-    if (characterPool.length > 0) {
-      const newPool = [...characterPool];
-      const draftIndex = Math.floor(Math.random() * newPool.length);
-      const character = newPool.splice(draftIndex, 1)[0];
-      
-      const imageUrl = await getCharImage(character.name);
-      
-      setDraftedCharacter({ info: character, imageUrl });
-      setCharacterPool(newPool);
-    }
+    if (draftedCharacter || crewIsFull || characterPool.length === 0) return;
+    
+    const newPool = [...characterPool];
+    const draftIndex = Math.floor(Math.random() * newPool.length);
+    const character = newPool.splice(draftIndex, 1)[0];
+    setCharacterPool(newPool);
+    
+    const imageUrl = await getCharImage(character.name);
+    
+    setDraftedCharacter({ info: character, imageUrl });
   };
 
   const handleAssignRole = (role: Role) => {
     if (!draftedCharacter) return;
 
-    // Direct assignment, no swap logic needed here
     setMyCrew((prev) => ({ ...prev, [role]: draftedCharacter }));
     setDraftedCharacter(null);
   };
   
   useEffect(() => {
-    // Transition to swapping phase once crew is full
     if (crewIsFull && phase === "drafting") {
       setPhase("swapping");
     }
@@ -153,7 +150,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   
   const handlePerformSwap = (targetRole: Role) => {
     if (!swappingCharacterRole || swappingCharacterRole === targetRole) {
-      setSwappingCharacterRole(null); // Deselect if clicking the same character
+      setSwappingCharacterRole(null);
       return;
     }
   
@@ -166,7 +163,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   
     setMyCrew(newCrew);
     setSwappingCharacterRole(null);
-    setHasSwapped(true); // Mark that a swap has occurred
+    setHasSwapped(true);
     toast({
         title: "Swap Successful!",
         description: `${sourceCharacter?.info.name} and ${targetCharacter?.info.name} have swapped roles.`,
@@ -326,7 +323,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                             <X className="mr-2 h-4 w-4" /> Cancel Swap
                         </Button>
                     )}
-                    <Button onClick={handleFinish} size="lg">
+                    <Button onClick={handleFinish} size="lg" disabled={swappingCharacterRole !== null}>
                         Finish and Proceed to Voting
                     </Button>
                 </CardContent>
