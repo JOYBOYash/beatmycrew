@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { Home, Share2, Users, Star, RotateCw, Replace, X } from "lucide-react";
+import { Home, Share2, Users, Star, RotateCw, Replace, X, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CaptainIcon } from "./icons/captain-icon";
 import { ViceCaptainIcon } from "./icons/vice-captain-icon";
@@ -71,6 +71,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   const [finalScore, setFinalScore] = useState<number>(0);
   const [swappingCharacterRole, setSwappingCharacterRole] = useState<Role | null>(null);
   const [hasSwapped, setHasSwapped] = useState(false);
+  const [reportedIssues, setReportedIssues] = useState<string[]>([]);
 
   const initializePool = async () => {
     const fetchedChars = await fetchAllCharacters();
@@ -84,11 +85,6 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
   const crewIsFull = useMemo(
     () => Object.values(myCrew).every((c) => c !== null),
-    [myCrew]
-  );
-  
-  const assignedRoles = useMemo(() =>
-    ROLES.filter(role => myCrew[role] !== null),
     [myCrew]
   );
 
@@ -141,6 +137,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     setFinalScore(0);
     setSwappingCharacterRole(null);
     setHasSwapped(false);
+    setReportedIssues([]);
   }
 
   const handleInitiateSwap = (role: Role) => {
@@ -178,12 +175,23 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     setPhase('voting');
   }
 
+  const handleReportIssue = (characterName: string) => {
+    if (!reportedIssues.includes(characterName)) {
+      setReportedIssues(prev => [...prev, characterName]);
+      toast({
+        title: "Issue Reported",
+        description: `${characterName} has been added to the report list.`,
+      });
+    }
+  };
+
   const renderCrewMember = (role: Role, isVotingPhase: boolean = false) => {
     const crewMember = myCrew[role];
     const Icon = roleIcons[role];
 
     const isSwapSource = swappingCharacterRole === role;
     const canBeSwapTarget = swappingCharacterRole !== null && swappingCharacterRole !== role;
+    const hasImageIssue = crewMember?.imageUrl.includes('placehold.co');
 
     return (
       <div key={role} className="flex flex-col items-center gap-2">
@@ -229,6 +237,20 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 >
                     <Replace className="w-4 h-4" />
                 </Button>
+              )}
+              {hasImageIssue && !reportedIssues.includes(crewMember.info.name) && (
+                 <Button
+                    size="sm"
+                    variant="destructive"
+                    className="absolute top-1 left-1 h-auto p-1 text-xs opacity-0 group-hover:opacity-100"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleReportIssue(crewMember.info.name)
+                    }}
+                    title={`Report image issue for ${crewMember.info.name}`}
+                 >
+                    <AlertTriangle className="w-3 h-3 mr-1" /> Report
+                 </Button>
               )}
             </>
           ) : (
@@ -291,7 +313,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                   Draft Character
                 </Button>
                 {draftedCharacter && (
-                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 mt-4">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-4">
                       {ROLES.filter(r => myCrew[r] === null).map(role => (
                           <Button key={role} variant="secondary" onClick={() => handleAssignRole(role)}>Assign to {role}</Button>
                       ))}
@@ -330,21 +352,38 @@ export default function RoomPage({ roomId }: { roomId: string }) {
             </Card>
           )}
           
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Crew</CardTitle>
-              <CardDescription>
-                {
-                  phase === 'drafting' ? `Fill all ${ROLES.length} positions to complete your crew.` : 
-                  phase === 'swapping' ? 'Your final crew before voting.' :
-                  'Your masterpiece!'
-                }
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {ROLES.map(role => renderCrewMember(role, false))}
-            </CardContent>
-          </Card>
+          <div className="grid gap-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Crew</CardTitle>
+                <CardDescription>
+                  {
+                    phase === 'drafting' ? `Fill all ${ROLES.length} positions to complete your crew.` : 
+                    phase === 'swapping' ? 'Your final crew before voting.' :
+                    'Your masterpiece!'
+                  }
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {ROLES.map(role => renderCrewMember(role, false))}
+              </CardContent>
+            </Card>
+
+            {reportedIssues.length > 0 && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2"><AlertTriangle className="text-destructive"/> Image Alias Report</CardTitle>
+                        <CardDescription>The following characters had image loading issues. You can provide this list to have their aliases added.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="list-disc pl-5 text-sm text-muted-foreground grid gap-1">
+                            {reportedIssues.map(name => <li key={name}>{name}</li>)}
+                        </ul>
+                    </CardContent>
+                </Card>
+            )}
+          </div>
+
         </div>
       )}
 

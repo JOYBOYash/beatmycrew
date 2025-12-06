@@ -1,6 +1,7 @@
 
 const nameAliasMap: Record<string, string> = {
     "Carue": "Karoo",
+    "Dr. Kureha": "Kureha",
 };
 
 export async function getCharImage(name: string): Promise<string> {
