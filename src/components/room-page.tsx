@@ -363,11 +363,33 @@ export default function RoomPage({ roomId }: { roomId: string }) {
               </CardHeader>
               <CardContent className="flex-grow flex flex-col items-center justify-center gap-4 text-center">
                 <div className="w-64 h-96">
-                    {draftedCharacter ? (
-                        <WantedPosterCard character={draftedCharacter} />
-                    ) : (
-                        <EmptyWantedPoster />
-                    )}
+                  {draftedCharacter ? (
+                    <Card className="h-full overflow-hidden">
+                      <CardContent className="p-0 h-full flex flex-col">
+                        <div className="relative flex-grow">
+                          <Image
+                            src={draftedCharacter.imageUrl}
+                            alt={draftedCharacter.info.name}
+                            fill
+                            className={cn(
+                              "object-cover",
+                              draftedCharacter.imageUrl.includes('bmc_logo.png') ? "object-contain p-4" : "object-top"
+                            )}
+                            sizes="256px"
+                          />
+                        </div>
+                        <div className="p-4 bg-card">
+                          <h3 className="font-bold text-lg">{draftedCharacter.info.name}</h3>
+                          <p className="text-sm text-muted-foreground">{draftedCharacter.info.description}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="w-full h-full border-2 border-dashed border-muted-foreground/50 rounded-lg flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                      <Users size={48} />
+                      <p className="text-center text-sm mt-2">Click draft to reveal a character</p>
+                    </div>
+                  )}
                 </div>
                 <Button onClick={handleDraft} disabled={!!draftedCharacter || crewIsFull} size="lg">
                   Draft Character
