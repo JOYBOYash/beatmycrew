@@ -1,8 +1,7 @@
 
-const nameAliasMap: Record<string, string> = {
-    "Carue": "Karoo",
-    "Dr. Kureha": "Kureha",
-};
+import aliases from './aliases.json';
+
+const nameAliasMap: Record<string, string> = aliases;
 
 export async function getCharImage(name: string): Promise<string> {
   const officialName = nameAliasMap[name] || name;

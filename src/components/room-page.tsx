@@ -4,6 +4,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import {
   Character,
   Role,
@@ -23,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { Home, Share2, Users, Star, RotateCw, Replace, X, AlertTriangle } from "lucide-react";
+import { Home, Share2, Users, Star, RotateCw, Replace, X, AlertTriangle, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CaptainIcon } from "./icons/captain-icon";
 import { ViceCaptainIcon } from "./icons/vice-captain-icon";
@@ -53,6 +54,22 @@ type DraftedCharacterState = {
   imageUrl: string;
 };
 
+// Function to store reported issues in localStorage
+const getReportedIssues = (): string[] => {
+    if (typeof window === 'undefined') return [];
+    const issues = localStorage.getItem('reportedIssues');
+    return issues ? JSON.parse(issues) : [];
+};
+  
+const addReportedIssue = (characterName: string) => {
+    if (typeof window === 'undefined') return;
+    const issues = getReportedIssues();
+    if (!issues.includes(characterName)) {
+        const newIssues = [...issues, characterName];
+        localStorage.setItem('reportedIssues', JSON.stringify(newIssues));
+    }
+};
+
 export default function RoomPage({ roomId }: { roomId: string }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -71,7 +88,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   const [finalScore, setFinalScore] = useState<number>(0);
   const [swappingCharacterRole, setSwappingCharacterRole] = useState<Role | null>(null);
   const [hasSwapped, setHasSwapped] = useState(false);
-  const [reportedIssues, setReportedIssues] = useState<string[]>([]);
+  const [locallyReported, setLocallyReported] = useState<string[]>(getReportedIssues());
 
   const initializePool = async () => {
     const fetchedChars = await fetchAllCharacters();
@@ -137,7 +154,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     setFinalScore(0);
     setSwappingCharacterRole(null);
     setHasSwapped(false);
-    setReportedIssues([]);
+    setLocallyReported(getReportedIssues());
   }
 
   const handleInitiateSwap = (role: Role) => {
@@ -176,11 +193,12 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   }
 
   const handleReportIssue = (characterName: string) => {
-    if (!reportedIssues.includes(characterName)) {
-      setReportedIssues(prev => [...prev, characterName]);
+    if (!locallyReported.includes(characterName)) {
+      addReportedIssue(characterName);
+      setLocallyReported(prev => [...prev, characterName]);
       toast({
         title: "Issue Reported",
-        description: `${characterName} has been added to the report list.`,
+        description: `${characterName} has been flagged for alias review.`,
       });
     }
   };
@@ -238,7 +256,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                     <Replace className="w-4 h-4" />
                 </Button>
               )}
-              {hasImageIssue && !reportedIssues.includes(crewMember.info.name) && (
+              {hasImageIssue && !locallyReported.includes(crewMember.info.name) && (
                  <Button
                     size="sm"
                     variant="destructive"
@@ -271,6 +289,9 @@ export default function RoomPage({ roomId }: { roomId: string }) {
           </div>
         </div>
         <div className="flex gap-2">
+            <Button variant="outline" asChild>
+                <Link href="/admin"><Settings className="mr-2 h-4 w-4" />Admin</Link>
+            </Button>
           <Button variant="outline" onClick={() => router.push("/")}><Home className="mr-2 h-4 w-4"/>Home</Button>
           <Button onClick={handleShare}><Share2 className="mr-2 h-4 w-4"/>Share</Button>
         </div>
@@ -368,20 +389,6 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                   {ROLES.map(role => renderCrewMember(role, false))}
               </CardContent>
             </Card>
-
-            {reportedIssues.length > 0 && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg flex items-center gap-2"><AlertTriangle className="text-destructive"/> Image Alias Report</CardTitle>
-                        <CardDescription>The following characters had image loading issues. You can provide this list to have their aliases added.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <ul className="list-disc pl-5 text-sm text-muted-foreground grid gap-1">
-                            {reportedIssues.map(name => <li key={name}>{name}</li>)}
-                        </ul>
-                    </CardContent>
-                </Card>
-            )}
           </div>
 
         </div>
