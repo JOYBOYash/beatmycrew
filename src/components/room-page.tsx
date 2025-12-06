@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { Home, Share2, Users, Star, RotateCw, Replace, X, AlertTriangle, Settings } from "lucide-react";
+import { Home, Share2, Users, Star, RotateCw, Replace, X, AlertTriangle, Settings, RefreshCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CaptainIcon } from "./icons/captain-icon";
 import { ViceCaptainIcon } from "./icons/vice-captain-icon";
@@ -88,6 +88,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   const [finalScore, setFinalScore] = useState<number>(0);
   const [swappingCharacterRole, setSwappingCharacterRole] = useState<Role | null>(null);
   const [hasSwapped, setHasSwapped] = useState(false);
+  const [hasRerolled, setHasRerolled] = useState(false);
   const [locallyReported, setLocallyReported] = useState<string[]>(getReportedIssues());
 
   const initializePool = async () => {
@@ -105,9 +106,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     [myCrew]
   );
 
-  const handleDraft = async () => {
-    if (draftedCharacter || crewIsFull || characterPool.length === 0) return;
-    
+  const drawCharacter = async () => {
     const newPool = [...characterPool];
     const draftIndex = Math.floor(Math.random() * newPool.length);
     const character = newPool.splice(draftIndex, 1)[0];
@@ -116,7 +115,22 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     const imageUrl = await getCharImage(character.name);
     
     setDraftedCharacter({ info: character, imageUrl });
+  }
+
+  const handleDraft = () => {
+    if (draftedCharacter || crewIsFull || characterPool.length === 0) return;
+    drawCharacter();
   };
+
+  const handleReroll = () => {
+    if (hasRerolled || !draftedCharacter) return;
+    setHasRerolled(true);
+    toast({
+      title: "Re-rolled!",
+      description: "You got a new character.",
+    });
+    drawCharacter();
+  }
 
   const handleAssignRole = (role: Role) => {
     if (!draftedCharacter) return;
@@ -154,6 +168,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     setFinalScore(0);
     setSwappingCharacterRole(null);
     setHasSwapped(false);
+    setHasRerolled(false);
     setLocallyReported(getReportedIssues());
   }
 
@@ -334,10 +349,14 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                   Draft Character
                 </Button>
                 {draftedCharacter && (
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-4">
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 mt-4">
                       {ROLES.filter(r => myCrew[r] === null).map(role => (
                           <Button key={role} variant="secondary" onClick={() => handleAssignRole(role)}>Assign to {role}</Button>
                       ))}
+                      <Button variant="outline" onClick={handleReroll} disabled={hasRerolled}>
+                        <RefreshCcw className="mr-2 h-4 w-4" />
+                        Re-roll
+                      </Button>
                   </div>
                 )}
               </CardContent>
@@ -437,3 +456,5 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     </div>
   );
 }
+
+    
