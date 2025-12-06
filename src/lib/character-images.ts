@@ -1,6 +1,11 @@
 
+const nameAliasMap: Record<string, string> = {
+    "Carue": "Karoo",
+};
+
 export async function getCharImage(name: string): Promise<string> {
-  const encodedName = encodeURIComponent(name.replace(/\./g, '.'));
+  const officialName = nameAliasMap[name] || name;
+  const encodedName = encodeURIComponent(officialName.replace(/\./g, '.'));
   const apiUrl = `https://onepiece.fandom.com/api.php?action=query&format=json&prop=pageimages&titles=${encodedName}&pithumbsize=400&origin=*`;
   
   try {
