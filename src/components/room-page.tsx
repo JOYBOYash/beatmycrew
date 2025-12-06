@@ -159,7 +159,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
                 sizes="(max-width: 768px) 120px, 120px"
               />
-              <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-1 text-center">
+              <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1 text-center">
                 <p className="text-white text-xs font-bold truncate">
                   {crewMember.info.name}
                 </p>
@@ -201,7 +201,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
             </CardHeader>
             <CardContent className="flex-grow flex flex-col items-center justify-center gap-4 text-center">
               {draftedCharacter ? (
-                <Card className="w-64 h-96 relative overflow-hidden shadow-lg">
+                <Card className="w-64 h-96 aspect-[2/3] relative overflow-hidden shadow-lg">
                   <Image
                     src={draftedCharacter.imageUrl}
                     alt={draftedCharacter.info.name}
@@ -215,7 +215,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                   </div>
                 </Card>
               ) : (
-                <div className="w-64 h-96 flex flex-col items-center justify-center text-muted-foreground bg-card/50 rounded-lg">
+                <div className="w-64 h-96 aspect-[2/3] flex flex-col items-center justify-center text-muted-foreground bg-card/50 rounded-lg">
                   <Users size={48} />
                   <p>Click draft to reveal a character</p>
                 </div>
@@ -238,7 +238,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
               <CardTitle>Your Crew</CardTitle>
               <CardDescription>Fill all {ROLES.length} positions to complete your crew.</CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-3 md:grid-cols-4 gap-4">
+            <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {ROLES.map(renderCrewMember)}
             </CardContent>
           </Card>
@@ -246,7 +246,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       )}
 
       {(phase === "voting" || phase === "result") && (
-         <Card className="w-full max-w-4xl mx-auto">
+         <Card className="w-full max-w-5xl mx-auto">
             <CardHeader className="text-center">
                 <CardTitle className="text-3xl font-headline">
                 {phase === 'voting' ? "Rate Your Masterpiece" : "Final Verdict"}
@@ -256,7 +256,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-4 mb-8">
+                <div className="flex flex-wrap justify-center gap-4 mb-8">
                     {ROLES.map(renderCrewMember)}
                 </div>
 

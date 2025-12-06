@@ -33,6 +33,12 @@ const nextConfig: NextConfig = {
         hostname: 'static.wikia.nocookie.net',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'via.placeholder.com',
+        port: '',
+        pathname: '/**',
       }
     ],
   },
