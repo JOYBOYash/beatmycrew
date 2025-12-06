@@ -25,7 +25,7 @@ type ApiCharacter = {
 
 export const fetchAllCharacters = async (): Promise<Character[]> => {
     try {
-        const response = await fetch('https://cdn.jsdelivr.net/npm/one-piece-data@latest/all.json');
+        const response = await fetch('https://cdn.jsdelivr.net/npm/one-piece-data@latest/characters.json');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
