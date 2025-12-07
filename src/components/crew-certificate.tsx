@@ -101,23 +101,13 @@ export default function CrewCertificate({
       )}
     >
       <div className="relative z-10 flex flex-col h-full items-center">
-        <div className="flex items-center justify-center gap-4 text-foreground mb-8">
-          <Image
-            src="/bmc_logo.png"
-            alt="BeatMyCrew Logo"
-            width={56}
-            height={56}
-            className="w-14 h-14"
-            unoptimized
-          />
-          <h1 className="text-4xl font-bold font-headline text-white drop-shadow-md">
-            My One Piece Crew
-          </h1>
-        </div>
+        <h1 className="text-4xl font-black font-headline tracking-widest text-center text-white/80 drop-shadow-md mb-8">
+          DEAD OR ALIVE
+        </h1>
 
         <div className="flex flex-row items-center justify-center gap-8 w-full">
           {/* Left Column: Leadership */}
-          <div className="flex flex-col items-center justify-center gap-4 mt-8">
+          <div className="flex flex-col items-center justify-center gap-4">
             <MemberCard
               member={crew['Captain']}
               role="Captain"
