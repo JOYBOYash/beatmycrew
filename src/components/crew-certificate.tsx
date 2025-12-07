@@ -27,6 +27,7 @@ type CrewCertificateProps = {
 const MemberCard = ({ member, role, isForCapture }: { member: (DraftedCharacterState & { dataUri?: string | null }) | null, role: Role, isForCapture: boolean}) => {
   const Icon = roleIcons[role];
   const imgSrc = (isForCapture ? member?.dataUri : member?.imageUrl) || '/bmc_logo.png';
+  
   return (
     <div className="bg-[url(/card_bg.png)] bg-cover bg-center rounded-lg p-2 flex flex-col items-center shadow-md w-40">
        <h3 className="font-headline font-black text-lg tracking-wider text-card-foreground/80">WANTED</h3>
@@ -74,9 +75,9 @@ export default function CrewCertificate({ crew, score, roomId, id, isForCapture 
           <h1 className="text-4xl font-bold font-headline">My One Piece Crew</h1>
         </div>
 
-        <div className="flex flex-row items-start justify-center gap-8 w-full">
+        <div className="flex flex-row items-center justify-center gap-8 w-full">
             {/* Left Column: Leadership */}
-            <div className="flex flex-col items-center justify-center gap-4 mt-16">
+            <div className="flex flex-col items-center justify-center gap-4">
                 <MemberCard member={crew["Captain"]} role="Captain" isForCapture={isForCapture} />
                 <MemberCard member={crew["Vice-Captain"]} role="Vice-Captain" isForCapture={isForCapture} />
             </div>
