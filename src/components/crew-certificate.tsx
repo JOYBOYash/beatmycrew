@@ -36,12 +36,12 @@ const MemberCard = ({ member, role, isForCapture }: { member: (DraftedCharacterS
   const Icon = roleIcons[role];
   const imgSrc = (isForCapture ? member?.dataUri : member?.imageUrl) || '/bmc_logo.png';
   return (
-    <div className="bg-card rounded-lg p-2 flex flex-col items-center border border-border shadow-md w-40">
-      <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
+    <div className="bg-[url(/card_bg.png)] bg-cover bg-center rounded-lg p-2 flex flex-col items-center shadow-md w-40">
+      <div className="flex items-center gap-1.5 text-card-foreground/80 mb-1">
         <Icon className="w-4 h-4" />
-        <span className="font-bold text-xs">{role}</span>
+        <span className="font-bold text-xs font-headline">{role}</span>
       </div>
-      <div className="w-full h-32 relative mt-1 rounded-sm overflow-hidden border border-border/50">
+      <div className="w-full h-32 relative mt-1 rounded-sm overflow-hidden border-2 border-yellow-800/20">
          {member ? (
            <Image 
             src={imgSrc} 
@@ -52,12 +52,12 @@ const MemberCard = ({ member, role, isForCapture }: { member: (DraftedCharacterS
             unoptimized={isForCapture}
           />
          ) : (
-          <div className="w-full h-full flex items-center justify-center bg-background/50">
+          <div className="w-full h-full flex items-center justify-center bg-black/10">
             <span className="text-muted-foreground text-3xl font-bold">?</span>
           </div>
          )}
       </div>
-      <p className="mt-1 font-bold text-sm text-center text-card-foreground truncate w-full h-5 flex items-center justify-center">
+      <p className="mt-1 font-headline font-bold text-sm text-center text-card-foreground h-10 flex items-center justify-center">
         {member ? member.info.name : ''}
       </p>
     </div>
@@ -76,9 +76,9 @@ export default function CrewCertificate({ crew, score, roomId, id, isForCapture 
       )}
     >
       <div className="relative z-10 flex flex-col h-full items-center">
-        <div className="flex items-center gap-4 text-foreground mb-6">
+        <div className="flex items-center gap-4 text-foreground mb-8">
            <Image src="/bmc_logo.png" alt="BeatMyCrew Logo" width={56} height={56} className="w-14 h-14" unoptimized/>
-          <h1 className="text-5xl font-bold font-headline">My One Piece Crew</h1>
+          <h1 className="text-4xl font-bold font-headline">My One Piece Crew</h1>
         </div>
 
         <div className="flex flex-row items-start justify-center gap-8 w-full">
