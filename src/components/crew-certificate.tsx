@@ -29,10 +29,7 @@ const MemberCard = ({ member, role, isForCapture }: { member: (DraftedCharacterS
   const imgSrc = (isForCapture ? member?.dataUri : member?.imageUrl) || '/bmc_logo.png';
   return (
     <div className="bg-[url(/card_bg.png)] bg-cover bg-center rounded-lg p-2 flex flex-col items-center shadow-md w-40">
-      <div className="flex items-center gap-1.5 text-card-foreground/80 mb-1">
-        <Icon className="w-4 h-4" />
-        <span className="font-bold text-xs font-headline">{role}</span>
-      </div>
+       <h3 className="font-headline font-black text-lg tracking-wider text-card-foreground/80">WANTED</h3>
       <div className="w-full h-32 relative mt-1 rounded-sm overflow-hidden border-2 border-yellow-800/20">
          {member ? (
            <Image 
@@ -49,9 +46,13 @@ const MemberCard = ({ member, role, isForCapture }: { member: (DraftedCharacterS
           </div>
          )}
       </div>
-      <p className="mt-1 font-headline font-bold text-sm text-center text-card-foreground h-10 flex items-center justify-center">
+      <p className="mt-2 font-headline font-bold text-base text-center text-card-foreground h-10 flex items-center justify-center">
         {member ? member.info.name : ''}
       </p>
+      <div className="flex items-center gap-1.5 text-card-foreground/80 -mt-1">
+        <Icon className="w-4 h-4" />
+        <span className="font-bold text-xs font-headline">{role}</span>
+      </div>
     </div>
   );
 }
