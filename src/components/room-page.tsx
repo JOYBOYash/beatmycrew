@@ -137,6 +137,7 @@ const WantedPosterCard = ({
 async function getBase64Image(url: string): Promise<string | null> {
     try {
         const response = await fetch(`/api/image-proxy?url=${encodeURIComponent(url)}`);
+        if (!response.ok) return null;
         const blob = await response.blob();
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -222,6 +223,42 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       description: "You got a new character.",
     });
     drawCharacter();
+  }
+
+  const handleRandomizeCrew = async () => {
+    if (crewIsFull) return;
+    
+    const needed = ROLES.length;
+    if (characterPool.length < needed) {
+        toast({ title: "Not enough characters in the pool to create a full crew!", variant: "destructive" });
+        return;
+    }
+
+    toast({ title: "Assembling a random crew..." });
+
+    let newPool = [...characterPool];
+    const selectedChars: Character[] = [];
+    for (let i = 0; i < needed; i++) {
+        const draftIndex = Math.floor(Math.random() * newPool.length);
+        selectedChars.push(newPool.splice(draftIndex, 1)[0]);
+    }
+    setCharacterPool(newPool);
+
+    const newCrewPromises = ROLES.map(async (role, index) => {
+        const charInfo = selectedChars[index];
+        const imageUrl = await getCharImage(charInfo.name);
+        return { role, state: { info: charInfo, imageUrl } };
+    });
+
+    const newCrewMembers = await Promise.all(newCrewPromises);
+
+    const finalCrew = Object.fromEntries(
+        newCrewMembers.map(item => [item.role, item.state])
+    ) as Record<Role, DraftedCharacterState>;
+
+    setMyCrew(finalCrew);
+    setDraftedCharacter(null); // Clear any drafted character
+    toast({ title: "Random crew assembled!", description: "You can make one swap before finalizing." });
   }
   
   useEffect(() => {
@@ -324,7 +361,6 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   const handleSaveCrew = async () => {
     toast({ title: 'Generating your crew certificate...' });
 
-    // Create a version of the crew with Base64 data URIs for images
     const crewWithDataUris: CrewWithDataUri = { ...myCrew };
     const promises = ROLES.map(async (role) => {
         const member = myCrew[role];
@@ -336,8 +372,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     
     await Promise.all(promises);
     setCrewForCertificate(crewWithDataUris);
-    setIsCapturing(true); // Show the certificate component for rendering
-    // The capture will be triggered by a useEffect hook that watches isCapturing and crewForCertificate
+    setIsCapturing(true); 
   };
   
   useEffect(() => {
@@ -376,7 +411,6 @@ export default function RoomPage({ roomId }: { roomId: string }) {
           }
       };
 
-      // Brief delay to allow the browser to render the component with data URIs before capture
       const timer = setTimeout(capture, 500);
 
       return () => clearTimeout(timer);
@@ -594,6 +628,10 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                       <Dices className="mr-2 h-4 w-4" />
                       Re-roll
                   </Button>
+                  <Button variant="outline" onClick={handleRandomizeCrew} disabled={crewIsFull}>
+                        <Dices className="mr-2 h-4 w-4" />
+                        Randomize Team
+                    </Button>
                   <Button variant="outline" onClick={toggleSwapMode} disabled={!crewIsFull || phase !== 'swapping' || hasSwapped}>
                       <Replace className="mr-2 h-4 w-4" />
                       {isSwapMode ? 'Cancel Swap' : 'Swap Roles'}
@@ -655,18 +693,16 @@ export default function RoomPage({ roomId }: { roomId: string }) {
          </Card>
       )}
 
-    {/* This is the component that will be screenshotted. It's positioned off-screen. */}
     {isCapturing && crewForCertificate && (
-      <CrewCertificate 
-        id="crew-certificate-capture"
-        crew={crewForCertificate} 
-        score={finalScore} 
-        roomId={roomId}
-        isForCapture={true}
-      />
+       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+          <CrewCertificate 
+            id="crew-certificate-capture"
+            crew={crewForCertificate} 
+            roomId={roomId}
+            isForCapture={true}
+          />
+       </div>
     )}
     </div>
   );
 }
-
-    
