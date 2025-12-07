@@ -81,27 +81,19 @@ export default function CrewCertificate({ crew, score, roomId, id, isForCapture 
           <h1 className="text-5xl font-bold font-headline">My One Piece Crew</h1>
         </div>
 
-        <div className="flex flex-col items-center gap-4 w-full">
-            {/* Captain */}
-            <div className="flex justify-center">
+        <div className="flex flex-row items-start justify-center gap-8 w-full">
+            {/* Left Column: Leadership */}
+            <div className="flex flex-col items-center justify-center gap-4 mt-16">
                 <MemberCard member={crew["Captain"]} role="Captain" isForCapture={isForCapture} />
-            </div>
-
-            {/* Vice-Captain */}
-            <div className="flex justify-center mt-2">
-                 <MemberCard member={crew["Vice-Captain"]} role="Vice-Captain" isForCapture={isForCapture} />
+                <MemberCard member={crew["Vice-Captain"]} role="Vice-Captain" isForCapture={isForCapture} />
             </div>
             
-            {/* Core Crew */}
-            <div className="flex justify-center gap-4 mt-2">
+            {/* Right Column: Crew */}
+            <div className="grid grid-cols-2 grid-rows-3 gap-4">
                 <MemberCard member={crew["Navigator"]} role="Navigator" isForCapture={isForCapture} />
                 <MemberCard member={crew["Sniper"]} role="Sniper" isForCapture={isForCapture} />
                 <MemberCard member={crew["Cook"]} role="Cook" isForCapture={isForCapture} />
                 <MemberCard member={crew["Doctor"]} role="Doctor" isForCapture={isForCapture} />
-            </div>
-
-            {/* Shipwright & Combatant */}
-             <div className="flex justify-center gap-4 mt-2">
                 <MemberCard member={crew["Shipwright"]} role="Shipwright" isForCapture={isForCapture} />
                 <MemberCard member={crew["Combatant"]} role="Combatant" isForCapture={isForCapture} />
             </div>
