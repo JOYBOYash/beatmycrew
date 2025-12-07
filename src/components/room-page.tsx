@@ -323,7 +323,6 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
   const handleSaveCrew = async () => {
     toast({ title: 'Generating your crew certificate...' });
-    setIsCapturing(true); // Show the certificate component
 
     // Create a version of the crew with Base64 data URIs for images
     const crewWithDataUris: CrewWithDataUri = { ...myCrew };
@@ -337,11 +336,12 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     
     await Promise.all(promises);
     setCrewForCertificate(crewWithDataUris);
-    // The capture will be triggered by a useEffect hook that watches crewForCertificate
+    setIsCapturing(true); // Show the certificate component for rendering
+    // The capture will be triggered by a useEffect hook that watches isCapturing and crewForCertificate
   };
   
   useEffect(() => {
-    if (crewForCertificate) {
+    if (isCapturing && crewForCertificate) {
       const certificateNode = document.getElementById('crew-certificate-capture');
       if (!certificateNode) {
         toast({ title: 'Error preparing certificate.', variant: 'destructive' });
@@ -381,7 +381,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
       return () => clearTimeout(timer);
     }
-  }, [crewForCertificate, roomId, toast]);
+  }, [isCapturing, crewForCertificate, roomId, toast]);
   
 
   // --- Drag and Drop / Mobile Tap Handlers ---
@@ -610,7 +610,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       )}
 
       {(phase === "voting" || phase === "result") && (
-         <Card className="w-full max-w-5xl mx-auto animate-map-open bg-[url(/rating_bg.png)] bg-cover bg-center border-yellow-800/60">
+         <Card className="w-full max-w-5xl mx-auto animate-map-open bg-card/80 backdrop-blur-sm border-white/20">
             <CardHeader className="text-center">
                 <CardTitle className="text-3xl font-headline">
                 {phase === 'voting' ? "Rate Your Masterpiece" : "Final Verdict"}
