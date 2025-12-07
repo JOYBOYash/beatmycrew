@@ -433,7 +433,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 <CardHeader>
                     <CardTitle>Actions</CardTitle>
                 </CardHeader>
-                <CardContent className="grid grid-cols-2 gap-2">
+                <CardContent className="flex flex-row items-center gap-2">
                     <Button variant="outline" onClick={handleReroll} disabled={hasRerolled || !draftedCharacter}>
                         <Dices className="mr-2 h-4 w-4" />
                         Re-roll
@@ -444,7 +444,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                     </Button>
 
                     {phase === "swapping" && (
-                        <Button onClick={handleFinish} size="lg" disabled={swappingCharacterRole !== null} className="col-span-2">
+                        <Button onClick={handleFinish} size="lg" disabled={swappingCharacterRole !== null} className="flex-grow">
                             Finish and Proceed to Voting
                         </Button>
                     )}
@@ -522,4 +522,5 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   );
 }
 
+    
     
