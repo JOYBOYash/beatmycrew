@@ -93,7 +93,7 @@ const WantedPosterCard = ({
         <div
             onClick={onClick}
             className={cn(
-                "w-full h-full bg-card border-4 border-yellow-800/60 p-2 flex flex-col items-center gap-1 shadow-lg relative group",
+                "w-full h-full bg-[url(/card_bg.png)] bg-cover bg-center border-4 border-yellow-800/60 p-2 flex flex-col items-center gap-1 shadow-lg relative group",
                 {
                     "cursor-pointer hover:ring-2 hover:ring-primary": canBeSwapTarget,
                     "ring-2 ring-accent ring-offset-2 ring-offset-background rounded-lg": isSwapSource,
@@ -102,7 +102,7 @@ const WantedPosterCard = ({
             {...props}
         >
             <h3 className="font-headline font-black text-lg tracking-wider text-card-foreground/80">WANTED</h3>
-            <div className="w-full h-24 relative bg-black/10 border-2 border-yellow-800/60">
+            <div className="w-full h-32 relative bg-black/10 border-2 border-yellow-800/60">
                  <Image
                     src={showFallback ? '/bmc_logo.png' : character.imageUrl}
                     alt={character.info.name}
@@ -379,7 +379,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
         </div>
         <div
           className={cn(
-            "w-[140px] h-[200px] relative transition-all duration-200",
+            "w-[140px] h-[220px] relative transition-all duration-200",
             {
               'bg-primary/20 ring-2 ring-primary rounded-lg': isDraggingOver === role || isMobileAssignable
             }
