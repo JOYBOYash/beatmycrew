@@ -360,11 +360,18 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     toast({ title: 'Generating your crew certificate...' });
 
     try {
+        // Temporarily make it visible to capture
+        certificate.style.opacity = '1';
+        certificate.style.zIndex = '100';
+
         const canvas = await html2canvas(certificate, {
-            allowTaint: true,
-            useCORS: true,
             scale: 2, // Higher scale for better resolution
         });
+
+        // Hide it again
+        certificate.style.opacity = '0';
+        certificate.style.zIndex = '-50';
+
         const image = canvas.toDataURL('image/png', 1.0);
         
         const link = document.createElement('a');
@@ -378,6 +385,12 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     } catch (error) {
         console.error('Error generating canvas:', error);
         toast({ title: 'Could not save image', description: 'There was an error while creating your certificate.', variant: 'destructive' });
+        
+        // Ensure it's hidden on error too
+        if (certificate) {
+            certificate.style.opacity = '0';
+            certificate.style.zIndex = '-50';
+        }
     }
   };
 
@@ -661,4 +674,5 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     
 
     
+
 
