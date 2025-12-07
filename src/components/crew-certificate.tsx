@@ -66,7 +66,14 @@ export default function CrewCertificate({ crew, score, roomId, isVisible }: Crew
                 {member ? (
                   <>
                     <div className="w-full h-40 relative mt-1 rounded overflow-hidden">
-                      <Image src={member.imageUrl} alt={member.info.name} fill className="object-cover object-top" sizes="250px" />
+                      <Image 
+                        src={member.imageUrl} 
+                        alt={member.info.name} 
+                        fill 
+                        className="object-cover object-top" 
+                        sizes="250px"
+                        unoptimized
+                      />
                     </div>
                     <p className="mt-2 font-bold text-lg text-center text-white truncate w-full">{member.info.name}</p>
                   </>
