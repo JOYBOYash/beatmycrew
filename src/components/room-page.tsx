@@ -571,7 +571,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       )}
 
       {(phase === "voting" || phase === "result") && (
-         <Card className="w-full max-w-5xl mx-auto animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
+         <Card className="w-full max-w-5xl mx-auto animate-map-open bg-[url(/rating_bg.png)] bg-cover bg-center border-yellow-800/60">
             <CardHeader className="text-center">
                 <CardTitle className="text-3xl font-headline">
                 {phase === 'voting' ? "Rate Your Masterpiece" : "Final Verdict"}
