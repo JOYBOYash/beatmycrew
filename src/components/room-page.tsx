@@ -417,7 +417,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
       {(phase === "drafting" || phase === "swapping") && (
         <div className="flex-grow flex flex-col gap-4 items-center">
-          <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+          <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
             {/* Left Column: Drafting */}
             <div className="md:col-span-1 flex flex-col gap-4">
               <Card className="flex-grow flex flex-col animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
