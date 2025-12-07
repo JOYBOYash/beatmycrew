@@ -40,7 +40,7 @@ export default function CrewCertificate({ crew, score, roomId, isVisible }: Crew
         isVisible ? "opacity-100" : "opacity-0 -z-50"
       )}
     >
-      <Image src="/rating_bg.png" alt="Certificate Background" fill className="object-cover" />
+      <img src="/rating_bg.png" alt="Certificate Background" className="absolute top-0 left-0 w-full h-full object-cover -z-10" />
       <div className="relative z-10">
         <div className="flex justify-between items-start text-white">
           <div>
