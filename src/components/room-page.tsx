@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, type DragEvent } from "react";
+import React from 'react';
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -21,9 +22,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
-import { Badge } from "@/components/ui/badge";
 import { Home, Share2, Users, Star, RotateCw, Replace, X, AlertTriangle, Settings, RefreshCcw, Dices, Swords, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CaptainIcon } from "./icons/captain-icon";
@@ -35,6 +34,7 @@ import { DoctorIcon } from "./icons/doctor-icon";
 import { ShipwrightIcon } from "./icons/shipwright-icon";
 import { CombatantIcon } from "./icons/combatant-icon";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type GamePhase = "drafting" | "swapping" | "voting" | "result";
 
@@ -160,6 +160,9 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   const [hasRerolled, setHasRerolled] = useState(false);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const [isDraggingOver, setIsDraggingOver] = useState<Role | null>(null);
+  
+  const isMobile = useIsMobile();
+  const [mobileCharSelected, setMobileCharSelected] = useState(false);
 
   const initializePool = async () => {
     const fetchedChars = await fetchAllCharacters();
@@ -237,10 +240,11 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     setHasSwapped(false);
     setHasRerolled(false);
     setImageErrors({});
+    setMobileCharSelected(false);
   }
 
   const handleSwapClick = (role: Role) => {
-    if (!isSwapMode || hasSwapped) return;
+    if (!isSwapMode || hasSwapped || !myCrew[role]) return;
 
     if (!swappingCharacterRole) {
       // Start the swap
@@ -300,14 +304,32 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     setImageErrors(prev => ({ ...prev, [characterName]: true }));
   }
 
+  // --- Drag and Drop / Mobile Tap Handlers ---
+  const handleMobileDraftedCharClick = () => {
+    if (!isMobile || !draftedCharacter) return;
+    setMobileCharSelected(true);
+    toast({
+      title: `${draftedCharacter.info.name} selected!`,
+      description: 'Tap an empty role slot to assign them.',
+    });
+  }
+
+  const handleMobileSlotClick = (role: Role) => {
+    if (!isMobile || !mobileCharSelected || myCrew[role] || !draftedCharacter) return;
+    setMyCrew(prev => ({ ...prev, [role]: draftedCharacter }));
+    setDraftedCharacter(null);
+    setHasRerolled(false);
+    setMobileCharSelected(false);
+  }
+
   const handleDragStart = (e: DragEvent<HTMLDivElement>) => {
-    if (!draftedCharacter) return;
+    if (isMobile || !draftedCharacter) return;
     e.dataTransfer.setData("application/json", JSON.stringify(draftedCharacter));
   };
   
   const handleDrop = (e: DragEvent<HTMLDivElement>, role: Role) => {
     e.preventDefault();
-    if (myCrew[role]) return; // Slot is already filled
+    if (isMobile || myCrew[role]) return; 
     
     const characterData = e.dataTransfer.getData("application/json");
     if (characterData) {
@@ -321,14 +343,17 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   
   const handleDragOver = (e: DragEvent<HTMLDivElement>, role: Role) => {
     e.preventDefault();
-    if (!myCrew[role]) {
+    if (!isMobile && !myCrew[role]) {
       setIsDraggingOver(role);
     }
   };
   
   const handleDragLeave = () => {
-    setIsDraggingOver(null);
+    if (!isMobile) {
+      setIsDraggingOver(null);
+    }
   };
+  // --- End Handlers ---
 
 
   const renderCrewMemberSlot = (role: Role, isVotingPhase: boolean = false) => {
@@ -337,6 +362,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
     const isSwapSource = swappingCharacterRole === role;
     const canBeSwapTarget = isSwapMode && !hasSwapped && crewMember !== null;
+    const isMobileAssignable = isMobile && mobileCharSelected && !crewMember;
 
     return (
       <div 
@@ -345,6 +371,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
         onDrop={(e) => handleDrop(e, role)}
         onDragOver={(e) => handleDragOver(e, role)}
         onDragLeave={handleDragLeave}
+        onClick={() => handleMobileSlotClick(role)}
       >
         <div className="flex items-center gap-2 text-muted-foreground">
           <Icon className="w-5 h-5" />
@@ -354,7 +381,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
           className={cn(
             "w-[140px] h-[200px] relative transition-all duration-200",
             {
-              'bg-primary/20 ring-2 ring-primary rounded-lg': isDraggingOver === role
+              'bg-primary/20 ring-2 ring-primary rounded-lg': isDraggingOver === role || isMobileAssignable
             }
           )}
         >
@@ -368,7 +395,10 @@ export default function RoomPage({ roomId }: { roomId: string }) {
               onClick={() => handleSwapClick(role)}
             />
           ) : (
-             <div className="w-full h-full flex items-center justify-center relative overflow-hidden bg-card/50 group border-4 border-yellow-800/60 p-2 text-muted-foreground text-4xl font-bold">
+             <div className={cn(
+                "w-full h-full flex items-center justify-center relative overflow-hidden bg-card/50 group border-4 border-yellow-800/60 p-2 text-muted-foreground text-4xl font-bold",
+                isMobileAssignable && "cursor-pointer"
+             )}>
               ?
              </div>
           )}
@@ -399,9 +429,14 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 </CardHeader>
                 <CardContent className="flex-grow flex flex-col items-center justify-center gap-4 text-center">
                   <div 
-                    className={cn("w-64 h-96 transition-all", draftedCharacter && 'cursor-grab')}
-                    draggable={!!draftedCharacter}
+                    className={cn(
+                        "w-64 h-96 transition-all", 
+                        draftedCharacter && (isMobile ? 'cursor-pointer' : 'cursor-grab'),
+                        mobileCharSelected && "ring-2 ring-accent ring-offset-2 ring-offset-background rounded-lg"
+                    )}
+                    draggable={!isMobile && !!draftedCharacter}
                     onDragStart={handleDragStart}
+                    onClick={handleMobileDraftedCharClick}
                   >
                     {draftedCharacter ? (
                        <div className="w-full h-full relative group">
@@ -449,7 +484,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                   <CardTitle>Your Crew Roster</CardTitle>
                    <CardDescription>
                     {
-                      phase === 'drafting' ? `Drag your drafted character into an empty slot.` : 
+                      phase === 'drafting' ? (isMobile ? 'Tap your drafted character, then tap an empty slot.' : 'Drag your drafted character into an empty slot.') : 
                       phase === 'swapping' ? (
                           isSwapMode
                               ? swappingCharacterRole
@@ -474,7 +509,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
               <CardHeader>
                   <CardTitle>Actions</CardTitle>
               </CardHeader>
-              <CardContent className="flex flex-row items-center justify-center gap-4">
+              <CardContent className="flex flex-col md:flex-row items-center justify-center gap-4">
                   <Button variant="outline" onClick={handleReroll} disabled={hasRerolled || !draftedCharacter}>
                       <Dices className="mr-2 h-4 w-4" />
                       Re-roll
@@ -537,3 +572,5 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     </div>
   );
 }
+
+    
