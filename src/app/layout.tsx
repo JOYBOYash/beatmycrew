@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
+import VideoBackground from "@/components/video-background";
 
 export const metadata: Metadata = {
   title: "BeatMyCrew",
@@ -28,7 +29,8 @@ export default function RootLayout({
         />
       </head>
       <body className={cn("font-body antialiased min-h-screen")}>
-        {children}
+        <VideoBackground />
+        <div className="relative z-10">{children}</div>
         <Toaster />
       </body>
     </html>
