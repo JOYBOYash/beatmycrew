@@ -64,9 +64,12 @@ export default function CrewCertificate({ crew, score, roomId, id, isForCapture 
     <div
       id={id}
       className={cn(
-        "fixed left-[-9999px] top-0 p-8 font-sans bg-card",
+        "p-8 font-sans bg-card",
         "w-[1200px] h-[630px] overflow-hidden",
-        { "z-50": isForCapture, "-z-50": !isForCapture }
+        // When capturing, display as a centered overlay. Otherwise, hide it off-screen.
+        isForCapture
+          ? "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50"
+          : "absolute left-[-9999px] top-[-9999px] -z-50"
       )}
     >
       <div className="relative z-10 flex flex-col h-full items-center">
