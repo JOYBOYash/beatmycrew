@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { Home, Share2, Users, Star, RotateCw, Replace, X, AlertTriangle, Settings, RefreshCcw, Dices, Swords } from "lucide-react";
+import { Home, Share2, Users, Star, RotateCw, Replace, X, AlertTriangle, Settings, RefreshCcw, Dices, Swords, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CaptainIcon } from "./icons/captain-icon";
 import { ViceCaptainIcon } from "./icons/vice-captain-icon";
@@ -365,10 +365,8 @@ export default function RoomPage({ roomId }: { roomId: string }) {
         </div>
         <div className="flex gap-2">
             <Button variant="outline" asChild>
-                <Link href="/admin"><Settings className="mr-2 h-4 w-4" />Admin</Link>
+                <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" />Back</Link>
             </Button>
-          <Button variant="outline" onClick={() => router.push("/")}><Home className="mr-2 h-4 w-4"/>Home</Button>
-          <Button onClick={handleShare}><Share2 className="mr-2 h-4 w-4"/>Share</Button>
         </div>
       </header>
       
@@ -524,6 +522,3 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     </div>
   );
 }
-
-    
-    
