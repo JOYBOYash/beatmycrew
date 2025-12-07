@@ -375,106 +375,109 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       <Separator />
 
       {(phase === "drafting" || phase === "swapping") && (
-        <div className="flex-grow grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-          {/* Left Column: Drafting & Actions */}
-          <div className="md:col-span-1 flex flex-col gap-4">
-            <Card className="flex-grow flex flex-col animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
-              <CardHeader>
-                <CardTitle>DRAFTING ARENA</CardTitle>
-                <CardDescription>
-                  Remaining in Pool: {characterPool.length}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex-grow flex flex-col items-center justify-center gap-4 text-center">
-                <div 
-                  className={cn("w-64 h-96 transition-all", draftedCharacter && 'cursor-grab')}
-                  draggable={!!draftedCharacter}
-                  onDragStart={handleDragStart}
-                >
-                  {draftedCharacter ? (
-                     <div className="w-full h-full relative group">
-                        <Image
-                            src={draftedCharacter.imageUrl}
-                            alt={draftedCharacter.info.name}
-                            fill
-                            className={cn(
-                            "object-cover rounded-lg border-2 border-yellow-700/50",
-                            draftedCharacter.imageUrl.includes('bmc_logo.png') ? "object-contain p-4" : "object-top"
-                            )}
-                            sizes="256px"
-                        />
-                        <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2 text-center rounded-b-lg">
-                            <h3 className="font-bold text-lg">{draftedCharacter.info.name}</h3>
-                        </div>
-                     </div>
-                  ) : (
-                    <div className="w-full h-full border-2 border-dashed border-muted-foreground/50 rounded-lg flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                      {crewIsFull ? (
-                         <>
-                            <Users size={48} />
-                            <p className="text-center text-sm mt-2">Your crew is full!</p>
-                         </>
-                      ) : (
-                        <>
-                           <Users size={48} />
-                           <p className="text-center text-sm mt-2">Click draft to reveal a character</p>
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-                <Button onClick={handleDraft} disabled={!!draftedCharacter || crewIsFull} size="lg">
-                  Draft Character
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
+        <div className="flex-grow flex flex-col gap-4 items-center">
+          <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+            {/* Left Column: Drafting */}
+            <div className="md:col-span-1 flex flex-col gap-4">
+              <Card className="flex-grow flex flex-col animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
                 <CardHeader>
-                    <CardTitle>Actions</CardTitle>
+                  <CardTitle>DRAFTING ARENA</CardTitle>
+                  <CardDescription>
+                    Remaining in Pool: {characterPool.length}
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="flex flex-row items-center gap-2">
-                    <Button variant="outline" onClick={handleReroll} disabled={hasRerolled || !draftedCharacter}>
-                        <Dices className="mr-2 h-4 w-4" />
-                        Re-roll
-                    </Button>
-                    <Button variant="outline" onClick={() => handleInitiateSwap(ROLES[0])} disabled={!crewIsFull || phase !== 'swapping' || hasSwapped}>
-                        <Replace className="mr-2 h-4 w-4" />
-                        {swappingCharacterRole ? 'Cancel Swap' : 'Swap Roles'}
-                    </Button>
-
-                    {phase === "swapping" && (
-                        <Button onClick={handleFinish} size="lg" disabled={swappingCharacterRole !== null} className="flex-grow">
-                            Finish and Proceed to Voting
-                        </Button>
+                <CardContent className="flex-grow flex flex-col items-center justify-center gap-4 text-center">
+                  <div 
+                    className={cn("w-64 h-96 transition-all", draftedCharacter && 'cursor-grab')}
+                    draggable={!!draftedCharacter}
+                    onDragStart={handleDragStart}
+                  >
+                    {draftedCharacter ? (
+                       <div className="w-full h-full relative group">
+                          <Image
+                              src={draftedCharacter.imageUrl}
+                              alt={draftedCharacter.info.name}
+                              fill
+                              className={cn(
+                              "object-cover rounded-lg border-2 border-yellow-700/50",
+                              draftedCharacter.imageUrl.includes('bmc_logo.png') ? "object-contain p-4" : "object-top"
+                              )}
+                              sizes="256px"
+                          />
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2 text-center rounded-b-lg">
+                              <h3 className="font-bold text-lg">{draftedCharacter.info.name}</h3>
+                          </div>
+                       </div>
+                    ) : (
+                      <div className="w-full h-full border-2 border-dashed border-muted-foreground/50 rounded-lg flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                        {crewIsFull ? (
+                           <>
+                              <Users size={48} />
+                              <p className="text-center text-sm mt-2">Your crew is full!</p>
+                           </>
+                        ) : (
+                          <>
+                             <Users size={48} />
+                             <p className="text-center text-sm mt-2">Click draft to reveal a character</p>
+                          </>
+                        )}
+                      </div>
                     )}
+                  </div>
+                  <Button onClick={handleDraft} disabled={!!draftedCharacter || crewIsFull} size="lg">
+                    Draft Character
+                  </Button>
                 </CardContent>
-            </Card>
-          </div>
+              </Card>
+            </div>
 
-          {/* Right Column: Crew Roster */}
-          <div className="md:col-span-2">
-            <Card className="h-full animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
-              <CardHeader>
-                <CardTitle>Your Crew Roster</CardTitle>
-                 <CardDescription>
-                  {
-                    phase === 'drafting' ? `Drag your drafted character into an empty slot.` : 
-                    phase === 'swapping' ? (
-                        swappingCharacterRole 
-                            ? `Select a crew member to swap with ${myCrew[swappingCharacterRole]?.info.name}.`
-                            : hasSwapped 
-                                ? "Your swap has been made." 
-                                : "Your final crew. You can make one swap."
-                    ) : 'Your masterpiece!'
-                  }
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-6">
-                  {ROLES.map(role => renderCrewMemberSlot(role, false))}
-              </CardContent>
-            </Card>
+            {/* Right Column: Crew Roster */}
+            <div className="md:col-span-2">
+              <Card className="h-full animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
+                <CardHeader>
+                  <CardTitle>Your Crew Roster</CardTitle>
+                   <CardDescription>
+                    {
+                      phase === 'drafting' ? `Drag your drafted character into an empty slot.` : 
+                      phase === 'swapping' ? (
+                          swappingCharacterRole 
+                              ? `Select a crew member to swap with ${myCrew[swappingCharacterRole]?.info.name}.`
+                              : hasSwapped 
+                                  ? "Your swap has been made." 
+                                  : "Your final crew. You can make one swap."
+                      ) : 'Your masterpiece!'
+                    }
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-6">
+                    {ROLES.map(role => renderCrewMemberSlot(role, false))}
+                </CardContent>
+              </Card>
+            </div>
           </div>
+          
+          {/* Actions Toolbar */}
+          <Card className="w-full max-w-4xl animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
+              <CardHeader>
+                  <CardTitle>Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-row items-center justify-center gap-4">
+                  <Button variant="outline" onClick={handleReroll} disabled={hasRerolled || !draftedCharacter}>
+                      <Dices className="mr-2 h-4 w-4" />
+                      Re-roll
+                  </Button>
+                  <Button variant="outline" onClick={() => handleInitiateSwap(ROLES[0])} disabled={!crewIsFull || phase !== 'swapping' || hasSwapped}>
+                      <Replace className="mr-2 h-4 w-4" />
+                      {swappingCharacterRole ? 'Cancel Swap' : 'Swap Roles'}
+                  </Button>
+
+                  {phase === "swapping" && (
+                      <Button onClick={handleFinish} size="lg" disabled={swappingCharacterRole !== null} className="flex-grow">
+                          Finish and Proceed to Voting
+                      </Button>
+                  )}
+              </CardContent>
+          </Card>
         </div>
       )}
 
