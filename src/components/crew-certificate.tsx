@@ -1,13 +1,22 @@
 
-import Image from "next/image";
-import { ROLES, type Role } from "@/lib/characters";
-import { type DraftedCharacterState } from "./room-page";
-import { cn } from "@/lib/utils";
-import { Anchor, Award, Compass, Crosshair, ChefHat, Stethoscope, Hammer, Swords } from "lucide-react";
+import Image from 'next/image';
+import {ROLES, type Role} from '@/lib/characters';
+import {type DraftedCharacterState} from './room-page';
+import {cn} from '@/lib/utils';
+import {
+  Anchor,
+  Award,
+  Compass,
+  Crosshair,
+  ChefHat,
+  Stethoscope,
+  Hammer,
+  Swords,
+} from 'lucide-react';
 
-const roleIcons: Record<Role, React.ComponentType<{ className?: string }>> = {
+const roleIcons: Record<Role, React.ComponentType<{className?: string}>> = {
   Captain: Anchor,
-  "Vice-Captain": Award,
+  'Vice-Captain': Award,
   Navigator: Compass,
   Sniper: Crosshair,
   Cook: ChefHat,
@@ -17,35 +26,49 @@ const roleIcons: Record<Role, React.ComponentType<{ className?: string }>> = {
 };
 
 type CrewCertificateProps = {
-  crew: Record<Role, (DraftedCharacterState & { dataUri?: string | null }) | null>;
+  crew: Record<
+    Role,
+    (DraftedCharacterState & {dataUri?: string | null}) | null
+  >;
   score: number;
   roomId: string;
   id: string;
   isForCapture: boolean;
 };
 
-const MemberCard = ({ member, role, isForCapture }: { member: (DraftedCharacterState & { dataUri?: string | null }) | null, role: Role, isForCapture: boolean}) => {
+const MemberCard = ({
+  member,
+  role,
+  isForCapture,
+}: {
+  member: (DraftedCharacterState & {dataUri?: string | null}) | null;
+  role: Role;
+  isForCapture: boolean;
+}) => {
   const Icon = roleIcons[role];
-  const imgSrc = (isForCapture ? member?.dataUri : member?.imageUrl) || '/bmc_logo.png';
-  
+  const imgSrc =
+    (isForCapture ? member?.dataUri : member?.imageUrl) || '/bmc_logo.png';
+
   return (
     <div className="bg-[url(/card_bg.png)] bg-cover bg-center rounded-lg p-2 flex flex-col items-center shadow-md w-40">
-       <h3 className="font-headline font-black text-lg tracking-wider text-card-foreground/80">WANTED</h3>
+      <h3 className="font-headline font-black text-lg tracking-wider text-card-foreground/80">
+        WANTED
+      </h3>
       <div className="w-full h-32 relative mt-1 rounded-sm overflow-hidden border-2 border-yellow-800/20">
-         {member ? (
-           <Image 
-            src={imgSrc} 
-            alt={member.info.name} 
-            fill 
-            className="object-cover object-top" 
+        {member ? (
+          <Image
+            src={imgSrc}
+            alt={member.info.name}
+            fill
+            className="object-cover object-top"
             sizes="150px"
             unoptimized={isForCapture}
           />
-         ) : (
+        ) : (
           <div className="w-full h-full flex items-center justify-center bg-black/10">
             <span className="text-muted-foreground text-3xl font-bold">?</span>
           </div>
-         )}
+        )}
       </div>
       <p className="mt-2 font-headline font-bold text-base text-center text-card-foreground h-10 flex items-center justify-center">
         {member ? member.info.name : ''}
@@ -56,51 +79,104 @@ const MemberCard = ({ member, role, isForCapture }: { member: (DraftedCharacterS
       </div>
     </div>
   );
-}
+};
 
-
-export default function CrewCertificate({ crew, score, roomId, id, isForCapture }: CrewCertificateProps) {
+export default function CrewCertificate({
+  crew,
+  score,
+  roomId,
+  id,
+  isForCapture,
+}: CrewCertificateProps) {
   return (
     <div
       id={id}
       className={cn(
-        "p-8 font-sans bg-card",
-        "w-[1200px] h-[630px] overflow-hidden",
+        'p-8 font-sans bg-[url(/rating_bg.png)] bg-cover bg-center',
+        'w-[1200px] h-[630px] overflow-hidden',
         // When capturing, display as a fixed overlay at the top-left. Otherwise, hide it off-screen.
         isForCapture
-          ? "fixed top-0 left-0 z-50"
-          : "absolute left-[-9999px] top-[-9999px] -z-50"
+          ? 'fixed top-0 left-0 z-50'
+          : 'absolute left-[-9999px] top-[-9999px] -z-50'
       )}
     >
       <div className="relative z-10 flex flex-col h-full items-center">
         <div className="flex items-center justify-center gap-4 text-foreground mb-8">
-           <Image src="/bmc_logo.png" alt="BeatMyCrew Logo" width={56} height={56} className="w-14 h-14" unoptimized/>
-          <h1 className="text-4xl font-bold font-headline">My One Piece Crew</h1>
+          <Image
+            src="/bmc_logo.png"
+            alt="BeatMyCrew Logo"
+            width={56}
+            height={56}
+            className="w-14 h-14"
+            unoptimized
+          />
+          <h1 className="text-4xl font-bold font-headline text-white drop-shadow-md">
+            My One Piece Crew
+          </h1>
         </div>
 
         <div className="flex flex-row items-center justify-center gap-8 w-full">
-            {/* Left Column: Leadership */}
-            <div className="flex flex-col items-center justify-center gap-4">
-                <MemberCard member={crew["Captain"]} role="Captain" isForCapture={isForCapture} />
-                <MemberCard member={crew["Vice-Captain"]} role="Vice-Captain" isForCapture={isForCapture} />
-            </div>
-            
-            {/* Right Column: Crew */}
-            <div className="grid grid-cols-3 grid-rows-2 gap-4">
-                <MemberCard member={crew["Navigator"]} role="Navigator" isForCapture={isForCapture} />
-                <MemberCard member={crew["Sniper"]} role="Sniper" isForCapture={isForCapture} />
-                <MemberCard member={crew["Cook"]} role="Cook" isForCapture={isForCapture} />
-                <MemberCard member={crew["Doctor"]} role="Doctor" isForCapture={isForCapture} />
-                <MemberCard member={crew["Shipwright"]} role="Shipwright" isForCapture={isForCapture} />
-                <MemberCard member={crew["Combatant"]} role="Combatant" isForCapture={isForCapture} />
-            </div>
+          {/* Left Column: Leadership */}
+          <div className="flex flex-col items-center justify-center gap-4 mt-8">
+            <MemberCard
+              member={crew['Captain']}
+              role="Captain"
+              isForCapture={isForCapture}
+            />
+            <MemberCard
+              member={crew['Vice-Captain']}
+              role="Vice-Captain"
+              isForCapture={isForCapture}
+            />
+          </div>
+
+          {/* Right Column: Crew */}
+          <div className="grid grid-cols-3 grid-rows-2 gap-4">
+            <MemberCard
+              member={crew['Navigator']}
+              role="Navigator"
+              isForCapture={isForCapture}
+            />
+            <MemberCard
+              member={crew['Sniper']}
+              role="Sniper"
+              isForCapture={isForCapture}
+            />
+            <MemberCard
+              member={crew['Cook']}
+              role="Cook"
+              isForCapture={isForCapture}
+            />
+            <MemberCard
+              member={crew['Doctor']}
+              role="Doctor"
+              isForCapture={isForCapture}
+            />
+            <MemberCard
+              member={crew['Shipwright']}
+              role="Shipwright"
+              isForCapture={isForCapture}
+            />
+            <MemberCard
+              member={crew['Combatant']}
+              role="Combatant"
+              isForCapture={isForCapture}
+            />
+          </div>
         </div>
-        
-        <div className="absolute bottom-2 right-4 flex items-center justify-center gap-2 text-muted-foreground/50 text-sm font-headline z-10">
+
+        <div className="absolute bottom-2 right-4 flex items-center justify-center gap-1.5 text-white/50 text-xs font-headline z-10">
           <p>Generated by BeatMyCrew</p>
-          <Image src="/bmc_logo.png" alt="BeatMyCrew Logo" width={20} height={20} className="w-5 h-5" unoptimized />
+          <Image
+            src="/bmc_logo.png"
+            alt="BeatMyCrew Logo"
+            width={16}
+            height={16}
+            className="w-4 h-4"
+            unoptimized
+          />
         </div>
       </div>
     </div>
   );
-};
+}
