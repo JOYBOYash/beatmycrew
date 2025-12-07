@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, type DragEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { Home, Share2, Users, Star, RotateCw, Replace, X, AlertTriangle, Settings, RefreshCcw, Dices } from "lucide-react";
+import { Home, Share2, Users, Star, RotateCw, Replace, X, AlertTriangle, Settings, RefreshCcw, Dices, Swords } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CaptainIcon } from "./icons/captain-icon";
 import { ViceCaptainIcon } from "./icons/vice-captain-icon";
@@ -35,7 +35,6 @@ import { DoctorIcon } from "./icons/doctor-icon";
 import { ShipwrightIcon } from "./icons/shipwright-icon";
 import { CombatantIcon } from "./icons/combatant-icon";
 import { cn } from "@/lib/utils";
-import { Logo } from "./logo";
 
 type GamePhase = "drafting" | "swapping" | "voting" | "result";
 
@@ -55,7 +54,6 @@ type DraftedCharacterState = {
   imageUrl: string;
 };
 
-// Function to store reported issues in localStorage
 const getReportedIssues = (): string[] => {
     if (typeof window === 'undefined') return [];
     const issues = localStorage.getItem('reportedIssues');
@@ -73,22 +71,38 @@ const addReportedIssue = (characterName: string) => {
 
 const WantedPosterCard = ({
     character,
-    children,
     onImageError,
     hasError,
+    isSwapSource,
+    canBeSwapTarget,
+    onClick,
+    ...props
 }: {
     character: DraftedCharacterState;
-    children?: React.ReactNode;
     onImageError: () => void;
     hasError: boolean;
+    isSwapSource?: boolean;
+    canBeSwapTarget?: boolean;
+    onClick?: () => void;
+    [key: string]: any;
 }) => {
     const isApiFallback = character.imageUrl.includes('bmc_logo.png');
     const showFallback = isApiFallback || hasError;
 
     return (
-        <div className="w-full h-full bg-card border-4 border-yellow-800/60 p-2 flex flex-col items-center gap-1 shadow-lg relative group">
-            <h3 className="font-headline font-black text-2xl tracking-wider">WANTED</h3>
-            <div className="w-full h-32 relative bg-black/10 border-2 border-yellow-800/60">
+        <div
+            onClick={onClick}
+            className={cn(
+                "w-full h-full bg-card border-4 border-yellow-800/60 p-2 flex flex-col items-center gap-1 shadow-lg relative group",
+                {
+                    "cursor-pointer hover:ring-2 hover:ring-primary": canBeSwapTarget,
+                    "ring-2 ring-accent ring-offset-2 ring-offset-background rounded-lg": isSwapSource,
+                }
+            )}
+            {...props}
+        >
+            <h3 className="font-headline font-black text-lg tracking-wider text-card-foreground/80">WANTED</h3>
+            <div className="w-full h-24 relative bg-black/10 border-2 border-yellow-800/60">
                  <Image
                     src={showFallback ? '/bmc_logo.png' : character.imageUrl}
                     alt={character.info.name}
@@ -96,31 +110,33 @@ const WantedPosterCard = ({
                     fill
                     className={cn(
                         "object-cover",
-                        showFallback ? "object-contain p-4" : "object-top"
+                        showFallback ? "object-contain p-2" : "object-top"
                     )}
-                    sizes="(max-width: 768px) 120px, 120px"
+                    sizes="(max-width: 768px) 100px, 100px"
                     onError={onImageError}
                   />
             </div>
-            <p className="font-headline text-xs">DEAD OR ALIVE</p>
-            <p className="font-headline font-bold text-lg leading-tight truncate w-full text-center">
+            <p className="font-headline text-xs text-card-foreground/70">DEAD OR ALIVE</p>
+            <p className="font-headline font-bold text-base leading-tight truncate w-full text-center text-card-foreground">
                 {character.info.name}
             </p>
-            {children}
-            {isApiFallback && children}
+             {isApiFallback && !getReportedIssues().includes(character.info.name) && (
+                 <Button
+                    size="sm"
+                    variant="destructive"
+                    className="absolute bottom-1 right-1 h-auto p-1 text-xs opacity-0 group-hover:opacity-100 z-20"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      addReportedIssue(character.info.name)
+                    }}
+                    title={`Report image issue for ${character.info.name}`}
+                 >
+                    <AlertTriangle className="w-3 h-3 mr-1" /> Report
+                 </Button>
+              )}
         </div>
     )
 }
-
-const EmptyWantedPoster = () => {
-    return (
-        <div className="w-full h-full bg-card border-4 border-yellow-800/60 p-2 flex flex-col items-center justify-center gap-1 shadow-lg text-muted-foreground">
-             <Users size={48} />
-             <p className="text-center text-sm mt-2">Click draft to reveal a character</p>
-        </div>
-    )
-}
-
 
 export default function RoomPage({ roomId }: { roomId: string }) {
   const router = useRouter();
@@ -141,8 +157,8 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   const [swappingCharacterRole, setSwappingCharacterRole] = useState<Role | null>(null);
   const [hasSwapped, setHasSwapped] = useState(false);
   const [hasRerolled, setHasRerolled] = useState(false);
-  const [locallyReported, setLocallyReported] = useState<string[]>(getReportedIssues());
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+  const [isDraggingOver, setIsDraggingOver] = useState<Role | null>(null);
 
   const initializePool = async () => {
     const fetchedChars = await fetchAllCharacters();
@@ -188,14 +204,6 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     });
     drawCharacter();
   }
-
-  const handleAssignRole = (role: Role) => {
-    if (!draftedCharacter) return;
-
-    setMyCrew((prev) => ({ ...prev, [role]: draftedCharacter }));
-    setDraftedCharacter(null);
-    setHasRerolled(false);
-  };
   
   useEffect(() => {
     if (crewIsFull && phase === "drafting") {
@@ -204,7 +212,6 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   }, [crewIsFull, phase]);
 
   const handleSubmitRating = (rating: number[]) => {
-    // Simulate a score calculation
     const score = (rating[0] + (Math.random() * 3 + 7)) / 2;
     setFinalScore(score);
     setPhase("result");
@@ -227,12 +234,14 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     setSwappingCharacterRole(null);
     setHasSwapped(false);
     setHasRerolled(false);
-    setLocallyReported(getReportedIssues());
     setImageErrors({});
   }
 
   const handleInitiateSwap = (role: Role) => {
-    if (hasSwapped || phase !== 'swapping') return;
+    if (hasSwapped || phase !== 'swapping' || swappingCharacterRole === role) {
+        setSwappingCharacterRole(null);
+        return;
+    }
     setSwappingCharacterRole(role);
   };
   
@@ -257,51 +266,70 @@ export default function RoomPage({ roomId }: { roomId: string }) {
         description: `${sourceCharacter?.info.name} and ${targetCharacter?.info.name} have swapped roles.`,
     });
   };
-  
-  const handleCancelSwap = () => {
-    setSwappingCharacterRole(null);
-  };
 
   const handleFinish = () => {
     setPhase('voting');
   }
-
-  const handleReportIssue = (characterName: string) => {
-    if (!locallyReported.includes(characterName)) {
-      addReportedIssue(characterName);
-      setLocallyReported(prev => [...prev, characterName]);
-      toast({
-        title: "Issue Reported",
-        description: `${characterName} has been flagged for alias review.`,
-      });
-    }
-  };
   
   const handleImageError = (characterName: string) => {
     setImageErrors(prev => ({ ...prev, [characterName]: true }));
   }
 
-  const renderCrewMember = (role: Role, isVotingPhase: boolean = false) => {
+  const handleDragStart = (e: DragEvent<HTMLDivElement>) => {
+    if (!draftedCharacter) return;
+    e.dataTransfer.setData("application/json", JSON.stringify(draftedCharacter));
+  };
+  
+  const handleDrop = (e: DragEvent<HTMLDivElement>, role: Role) => {
+    e.preventDefault();
+    if (myCrew[role]) return; // Slot is already filled
+    
+    const characterData = e.dataTransfer.getData("application/json");
+    if (characterData) {
+      const character = JSON.parse(characterData) as DraftedCharacterState;
+      setMyCrew(prev => ({ ...prev, [role]: character }));
+      setDraftedCharacter(null);
+      setHasRerolled(false);
+    }
+    setIsDraggingOver(null);
+  };
+  
+  const handleDragOver = (e: DragEvent<HTMLDivElement>, role: Role) => {
+    e.preventDefault();
+    if (!myCrew[role]) {
+      setIsDraggingOver(role);
+    }
+  };
+  
+  const handleDragLeave = () => {
+    setIsDraggingOver(null);
+  };
+
+
+  const renderCrewMemberSlot = (role: Role, isVotingPhase: boolean = false) => {
     const crewMember = myCrew[role];
     const Icon = roleIcons[role];
 
     const isSwapSource = swappingCharacterRole === role;
     const canBeSwapTarget = swappingCharacterRole !== null && swappingCharacterRole !== role;
-    const isApiFallback = crewMember?.imageUrl.includes('bmc_logo.png');
 
     return (
-      <div key={role} className="flex flex-col items-center gap-2">
+      <div 
+        key={role} 
+        className="flex flex-col items-center gap-2"
+        onDrop={(e) => handleDrop(e, role)}
+        onDragOver={(e) => handleDragOver(e, role)}
+        onDragLeave={handleDragLeave}
+      >
         <div className="flex items-center gap-2 text-muted-foreground">
           <Icon className="w-5 h-5" />
           <h4 className="font-semibold text-sm">{role}</h4>
         </div>
         <div
-          onClick={() => canBeSwapTarget && handlePerformSwap(role)}
           className={cn(
-            "w-[140px] h-[220px] relative group",
+            "w-[140px] h-[200px] relative transition-all duration-200",
             {
-              "cursor-pointer hover:ring-2 hover:ring-primary": canBeSwapTarget,
-              "ring-2 ring-accent ring-offset-2 ring-offset-background rounded-lg": isSwapSource,
+              'bg-primary/20 ring-2 ring-primary rounded-lg': isDraggingOver === role
             }
           )}
         >
@@ -310,38 +338,16 @@ export default function RoomPage({ roomId }: { roomId: string }) {
               character={crewMember}
               onImageError={() => handleImageError(crewMember.info.name)}
               hasError={!!imageErrors[crewMember.info.name]}
-            >
-                {!isVotingPhase && phase === 'swapping' && !hasSwapped && (
-                <Button
-                    size="icon"
-                    variant="ghost"
-                    className="absolute top-1 right-1 h-7 w-7 bg-black/50 text-white opacity-0 group-hover:opacity-100 hover:bg-black/70 z-20"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        handleInitiateSwap(role);
-                    }}
-                    title={`Swap ${crewMember.info.name}`}
-                >
-                    <Replace className="w-4 h-4" />
-                </Button>
-              )}
-              {isApiFallback && !locallyReported.includes(crewMember.info.name) && (
-                 <Button
-                    size="sm"
-                    variant="destructive"
-                    className="absolute bottom-1 right-1 h-auto p-1 text-xs opacity-0 group-hover:opacity-100 z-20"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleReportIssue(crewMember.info.name)
-                    }}
-                    title={`Report image issue for ${crewMember.info.name}`}
-                 >
-                    <AlertTriangle className="w-3 h-3 mr-1" /> Report
-                 </Button>
-              )}
-            </WantedPosterCard>
+              isSwapSource={isSwapSource}
+              canBeSwapTarget={canBeSwapTarget}
+              onClick={() => {
+                if (canBeSwapTarget) handlePerformSwap(role);
+              }}
+            />
           ) : (
-             <div className="w-[140px] h-[220px] flex items-center justify-center relative overflow-hidden bg-card/50 group border-4 border-yellow-800/60 p-2 text-muted-foreground text-2xl">?</div>
+             <div className="w-full h-full flex items-center justify-center relative overflow-hidden bg-card/50 group border-4 border-yellow-800/60 p-2 text-muted-foreground text-4xl font-bold">
+              ?
+             </div>
           )}
         </div>
       </div>
@@ -349,7 +355,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   };
 
   return (
-    <div className="flex flex-col gap-8 h-full">
+    <div className="flex flex-col gap-4 h-full p-4">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-headline">The Grand Line Draft</h1>
@@ -369,9 +375,9 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       <Separator />
 
       {(phase === "drafting" || phase === "swapping") && (
-        <div className="flex-grow grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+        <div className="flex-grow grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
           {/* Left Column: Drafting & Actions */}
-          <div className="md:col-span-1 flex flex-col gap-8">
+          <div className="md:col-span-1 flex flex-col gap-4">
             <Card className="flex-grow flex flex-col animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
               <CardHeader>
                 <CardTitle>DRAFTING ARENA</CardTitle>
@@ -380,32 +386,40 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-grow flex flex-col items-center justify-center gap-4 text-center">
-                <div className="w-64 h-96">
+                <div 
+                  className={cn("w-64 h-96 transition-all", draftedCharacter && 'cursor-grab')}
+                  draggable={!!draftedCharacter}
+                  onDragStart={handleDragStart}
+                >
                   {draftedCharacter ? (
-                    <Card className="h-full overflow-hidden bg-transparent border-none shadow-none">
-                      <CardContent className="p-0 h-full flex flex-col">
-                        <div className="relative flex-grow">
-                          <Image
+                     <div className="w-full h-full relative group">
+                        <Image
                             src={draftedCharacter.imageUrl}
                             alt={draftedCharacter.info.name}
                             fill
                             className={cn(
-                              "object-cover rounded-lg border-2 border-yellow-700/50",
-                              draftedCharacter.imageUrl.includes('bmc_logo.png') ? "object-contain p-4" : "object-top"
+                            "object-cover rounded-lg border-2 border-yellow-700/50",
+                            draftedCharacter.imageUrl.includes('bmc_logo.png') ? "object-contain p-4" : "object-top"
                             )}
                             sizes="256px"
-                          />
+                        />
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2 text-center rounded-b-lg">
+                            <h3 className="font-bold text-lg">{draftedCharacter.info.name}</h3>
                         </div>
-                        <div className="p-4">
-                          <h3 className="font-bold text-lg">{draftedCharacter.info.name}</h3>
-                          <p className="text-sm text-muted-foreground">{draftedCharacter.info.description}</p>
-                        </div>
-                      </CardContent>
-                    </Card>
+                     </div>
                   ) : (
                     <div className="w-full h-full border-2 border-dashed border-muted-foreground/50 rounded-lg flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                      <Users size={48} />
-                      <p className="text-center text-sm mt-2">Click draft to reveal a character</p>
+                      {crewIsFull ? (
+                         <>
+                            <Users size={48} />
+                            <p className="text-center text-sm mt-2">Your crew is full!</p>
+                         </>
+                      ) : (
+                        <>
+                           <Users size={48} />
+                           <p className="text-center text-sm mt-2">Click draft to reveal a character</p>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
@@ -415,51 +429,27 @@ export default function RoomPage({ roomId }: { roomId: string }) {
               </CardContent>
             </Card>
 
-            {draftedCharacter && (
-                <Card className="animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
-                    <CardHeader>
-                        <CardTitle>Assign Role</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                        {ROLES.filter(r => myCrew[r] === null).map(role => (
-                            <Button key={role} variant="secondary" onClick={() => handleAssignRole(role)}>Assign to {role}</Button>                      
-                        ))}
-                         <Button variant="outline" onClick={handleReroll} disabled={hasRerolled} className="col-span-full">
-                            <Dices className="mr-2 h-4 w-4" />
-                            Re-roll
-                        </Button>
-                    </CardContent>
-                </Card>
-            )}
-            
-            {phase === "swapping" && (
-                <Card className="animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
-                    <CardHeader>
-                        <CardTitle>Finalize Your Crew</CardTitle>
-                        <CardDescription>
-                            Your crew is assembled! You can make one swap before finalizing.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-col items-center gap-4">
-                        <p className="text-muted-foreground text-center">
-                            {swappingCharacterRole 
-                                ? `Select a crew member to swap with ${myCrew[swappingCharacterRole]?.info.name}.`
-                                : hasSwapped 
-                                    ? "Your swap has been made." 
-                                    : "Click the swap icon on a character to start a swap."
-                            }
-                        </p>
-                        {swappingCharacterRole && (
-                            <Button variant="outline" size="sm" onClick={handleCancelSwap} className="w-fit">
-                                <X className="mr-2 h-4 w-4" /> Cancel Swap
-                            </Button>
-                        )}
-                        <Button onClick={handleFinish} size="lg" disabled={swappingCharacterRole !== null}>
+            <Card className="animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
+                <CardHeader>
+                    <CardTitle>Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" onClick={handleReroll} disabled={hasRerolled || !draftedCharacter}>
+                        <Dices className="mr-2 h-4 w-4" />
+                        Re-roll
+                    </Button>
+                    <Button variant="outline" onClick={() => handleInitiateSwap(ROLES[0])} disabled={!crewIsFull || phase !== 'swapping' || hasSwapped}>
+                        <Replace className="mr-2 h-4 w-4" />
+                        {swappingCharacterRole ? 'Cancel Swap' : 'Swap Roles'}
+                    </Button>
+
+                    {phase === "swapping" && (
+                        <Button onClick={handleFinish} size="lg" disabled={swappingCharacterRole !== null} className="col-span-2">
                             Finish and Proceed to Voting
                         </Button>
-                    </CardContent>
-                </Card>
-            )}
+                    )}
+                </CardContent>
+            </Card>
           </div>
 
           {/* Right Column: Crew Roster */}
@@ -469,14 +459,19 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 <CardTitle>Your Crew Roster</CardTitle>
                  <CardDescription>
                   {
-                    phase === 'drafting' ? `Fill all ${ROLES.length} positions to complete your crew.` : 
-                    phase === 'swapping' ? 'Your final crew before voting.' :
-                    'Your masterpiece!'
+                    phase === 'drafting' ? `Drag your drafted character into an empty slot.` : 
+                    phase === 'swapping' ? (
+                        swappingCharacterRole 
+                            ? `Select a crew member to swap with ${myCrew[swappingCharacterRole]?.info.name}.`
+                            : hasSwapped 
+                                ? "Your swap has been made." 
+                                : "Your final crew. You can make one swap."
+                    ) : 'Your masterpiece!'
                   }
                 </CardDescription>
               </CardHeader>
-              <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {ROLES.map(role => renderCrewMember(role, false))}
+              <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-6">
+                  {ROLES.map(role => renderCrewMemberSlot(role, false))}
               </CardContent>
             </Card>
           </div>
@@ -495,7 +490,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
             </CardHeader>
             <CardContent>
                 <div className="flex flex-wrap justify-center gap-4 mb-8">
-                    {ROLES.map(role => renderCrewMember(role, true))}
+                    {ROLES.map(role => renderCrewMemberSlot(role, true))}
                 </div>
 
                 {phase === 'voting' && (
