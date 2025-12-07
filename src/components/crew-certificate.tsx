@@ -2,26 +2,18 @@
 import Image from "next/image";
 import { ROLES, type Role } from "@/lib/characters";
 import { type DraftedCharacterState } from "./room-page";
-import { CaptainIcon } from "./icons/captain-icon";
-import { ViceCaptainIcon } from "./icons/vice-captain-icon";
-import { NavigatorIcon } from "./icons/navigator-icon";
-import { SniperIcon } from "./icons/sniper-icon";
-import { CookIcon } from "./icons/cook-icon";
-import { DoctorIcon } from "./icons/doctor-icon";
-import { ShipwrightIcon } from "./icons/shipwright-icon";
-import { CombatantIcon } from "./icons/combatant-icon";
 import { cn } from "@/lib/utils";
-import { Logo } from "./logo";
+import { Anchor, Award, Compass, Crosshair, ChefHat, Stethoscope, Hammer, Swords } from "lucide-react";
 
 const roleIcons: Record<Role, React.ComponentType<{ className?: string }>> = {
-  Captain: CaptainIcon,
-  "Vice-Captain": ViceCaptainIcon,
-  Navigator: NavigatorIcon,
-  Sniper: SniperIcon,
-  Cook: CookIcon,
-  Doctor: DoctorIcon,
-  Shipwright: ShipwrightIcon,
-  Combatant: CombatantIcon,
+  Captain: Anchor,
+  "Vice-Captain": Award,
+  Navigator: Compass,
+  Sniper: Crosshair,
+  Cook: ChefHat,
+  Doctor: Stethoscope,
+  Shipwright: Hammer,
+  Combatant: Swords,
 };
 
 type CrewCertificateProps = {

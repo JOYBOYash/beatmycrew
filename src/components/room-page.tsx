@@ -24,16 +24,8 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Download, Home, Share2, Users, Star, RotateCw, Replace, X, AlertTriangle, Settings, RefreshCcw, Dices, Swords, ArrowLeft } from "lucide-react";
+import { Download, Home, Share2, Users, Star, RotateCw, Replace, X, AlertTriangle, Settings, RefreshCcw, Dices, Swords, ArrowLeft, Anchor, Award, Compass, Crosshair, ChefHat, Stethoscope, Hammer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { CaptainIcon } from "./icons/captain-icon";
-import { ViceCaptainIcon } from "./icons/vice-captain-icon";
-import { NavigatorIcon } from "./icons/navigator-icon";
-import { SniperIcon } from "./icons/sniper-icon";
-import { CookIcon } from "./icons/cook-icon";
-import { DoctorIcon } from "./icons/doctor-icon";
-import { ShipwrightIcon } from "./icons/shipwright-icon";
-import { CombatantIcon } from "./icons/combatant-icon";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import CrewCertificate from "./crew-certificate";
@@ -41,14 +33,14 @@ import CrewCertificate from "./crew-certificate";
 type GamePhase = "drafting" | "swapping" | "voting" | "result";
 
 const roleIcons: Record<Role, React.ComponentType<{ className?: string }>> = {
-  Captain: CaptainIcon,
-  "Vice-Captain": ViceCaptainIcon,
-  Navigator: NavigatorIcon,
-  Sniper: SniperIcon,
-  Cook: CookIcon,
-  Doctor: DoctorIcon,
-  Shipwright: ShipwrightIcon,
-  Combatant: CombatantIcon,
+  Captain: Anchor,
+  "Vice-Captain": Award,
+  Navigator: Compass,
+  Sniper: Crosshair,
+  Cook: ChefHat,
+  Doctor: Stethoscope,
+  Shipwright: Hammer,
+  Combatant: Swords,
 };
 
 export type DraftedCharacterState = {
@@ -144,7 +136,7 @@ const WantedPosterCard = ({
 
 async function getBase64Image(url: string): Promise<string | null> {
     try {
-        const response = await fetch(url);
+        const response = await fetch(`/api/image-proxy?url=${encodeURIComponent(url)}`);
         const blob = await response.blob();
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -337,7 +329,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     const promises = ROLES.map(async (role) => {
         const member = myCrew[role];
         if (member) {
-            const dataUri = await getBase64Image(`/api/image-proxy?url=${encodeURIComponent(member.imageUrl)}`);
+            const dataUri = await getBase64Image(member.imageUrl);
             crewWithDataUris[role] = { ...member, dataUri: dataUri || member.imageUrl };
         }
     });
@@ -363,8 +355,6 @@ export default function RoomPage({ roomId }: { roomId: string }) {
               width: 1200,
               height: 630,
               scale: 2,
-              useCORS: true, 
-              allowTaint: true
             });
       
             const image = canvas.toDataURL('image/png', 1.0);
