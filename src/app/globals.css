@@ -15,7 +15,7 @@
     --secondary: 48 33% 90%;
     --secondary-foreground: 207 70% 53%;
     --muted: 48 33% 90%;
-    --muted-foreground: 20 15% 45%;
+    --muted-foreground: 25 50% 35%; /* Burnt Orange/Brown */
     --accent: 48 90% 60%; /* Sandy Yellow */
     --accent-foreground: 20 15% 25%;
     --destructive: 0 84.2% 60.2%;
@@ -24,28 +24,6 @@
     --input: 48 20% 85%;
     --ring: 207 70% 53%; /* Sea Blue for rings */
     --radius: 0.5rem;
-  }
- 
-  .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 48 90% 60%; /* Sandy Yellow */
-    --primary-foreground: 20 15% 25%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 48 90% 60%;
   }
 }
  
