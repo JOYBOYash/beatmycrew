@@ -89,7 +89,7 @@ export default function CrewCertificate({ crew, score, roomId, id, isForCapture 
             </div>
             
             {/* Right Column: Crew */}
-            <div className="grid grid-cols-2 grid-rows-3 gap-4">
+            <div className="grid grid-cols-3 grid-rows-2 gap-4">
                 <MemberCard member={crew["Navigator"]} role="Navigator" isForCapture={isForCapture} />
                 <MemberCard member={crew["Sniper"]} role="Sniper" isForCapture={isForCapture} />
                 <MemberCard member={crew["Cook"]} role="Cook" isForCapture={isForCapture} />
