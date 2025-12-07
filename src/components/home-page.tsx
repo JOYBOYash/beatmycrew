@@ -42,7 +42,7 @@ export default function HomePage() {
   };
 
   return (
-    <Card className="w-full max-w-md shadow-2xl">
+    <Card className="w-full max-w-md shadow-2xl bg-card/80 backdrop-blur-sm border-white/20">
       <CardHeader className="items-center text-center">
         <Logo />
       </CardHeader>

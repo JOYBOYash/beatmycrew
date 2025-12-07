@@ -371,7 +371,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       {(phase === "drafting" || phase === "swapping") && (
         <div className="grid md:grid-cols-2 gap-8">
           {phase === "drafting" && (
-            <Card className="flex flex-col">
+            <Card className="flex flex-col bg-card/50 backdrop-blur-sm border-white/20">
               <CardHeader>
                 <CardTitle>Draft a Character</CardTitle>
                 <CardDescription>
@@ -427,7 +427,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
           )}
 
           {phase === "swapping" && (
-            <Card>
+            <Card className="bg-card/50 backdrop-blur-sm border-white/20">
                 <CardHeader>
                     <CardTitle>Finalize Your Crew</CardTitle>
                     <CardDescription>
@@ -456,7 +456,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
           )}
           
           <div className="grid gap-8">
-            <Card>
+            <Card className="bg-card/50 backdrop-blur-sm border-white/20">
               <CardHeader>
                 <CardTitle>Your Crew</CardTitle>
                 <CardDescription>
@@ -477,7 +477,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       )}
 
       {(phase === "voting" || phase === "result") && (
-         <Card className="w-full max-w-5xl mx-auto">
+         <Card className="w-full max-w-5xl mx-auto bg-card/80 backdrop-blur-sm border-white/20">
             <CardHeader className="text-center">
                 <CardTitle className="text-3xl font-headline">
                 {phase === 'voting' ? "Rate Your Masterpiece" : "Final Verdict"}

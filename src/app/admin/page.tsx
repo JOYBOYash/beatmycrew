@@ -87,7 +87,7 @@ export default function AdminPage() {
         Use this page to correct image loading issues by providing the correct Fandom wiki name for characters.
       </p>
 
-      <Card>
+      <Card className="bg-card/80 backdrop-blur-sm border-white/20">
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
