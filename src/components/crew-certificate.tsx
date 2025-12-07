@@ -11,6 +11,7 @@ import { DoctorIcon } from "./icons/doctor-icon";
 import { ShipwrightIcon } from "./icons/shipwright-icon";
 import { CombatantIcon } from "./icons/combatant-icon";
 import { cn } from "@/lib/utils";
+import { Logo } from "./logo";
 
 const roleIcons: Record<Role, React.ComponentType<{ className?: string }>> = {
   Captain: CaptainIcon,
@@ -31,6 +32,39 @@ type CrewCertificateProps = {
   isForCapture: boolean;
 };
 
+const MemberCard = ({ member, role, isForCapture }: { member: (DraftedCharacterState & { dataUri?: string | null }) | null, role: Role, isForCapture: boolean}) => {
+  const Icon = roleIcons[role];
+  const imgSrc = (isForCapture ? member?.dataUri : member?.imageUrl) || '/bmc_logo.png';
+  return (
+    <div className="bg-card rounded-lg p-2 flex flex-col items-center border border-border shadow-md w-40">
+      <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
+        <Icon className="w-4 h-4" />
+        <span className="font-bold text-xs">{role}</span>
+      </div>
+      <div className="w-full h-32 relative mt-1 rounded-sm overflow-hidden border border-border/50">
+         {member ? (
+           <Image 
+            src={imgSrc} 
+            alt={member.info.name} 
+            fill 
+            className="object-cover object-top" 
+            sizes="150px"
+            unoptimized={isForCapture}
+          />
+         ) : (
+          <div className="w-full h-full flex items-center justify-center bg-background/50">
+            <span className="text-muted-foreground text-3xl font-bold">?</span>
+          </div>
+         )}
+      </div>
+      <p className="mt-1 font-bold text-sm text-center text-card-foreground truncate w-full h-5 flex items-center justify-center">
+        {member ? member.info.name : ''}
+      </p>
+    </div>
+  );
+}
+
+
 export default function CrewCertificate({ crew, score, roomId, id, isForCapture }: CrewCertificateProps) {
   return (
     <div
@@ -41,51 +75,36 @@ export default function CrewCertificate({ crew, score, roomId, id, isForCapture 
         { "z-50": isForCapture, "-z-50": !isForCapture }
       )}
     >
-      <div className="relative z-10 flex flex-col h-full">
-        <div className="flex justify-between items-start text-foreground">
-          <div>
-            <h1 className="text-5xl font-bold font-headline">My One Piece Crew</h1>
-            <p className="text-xl text-primary">Room Code: {roomId}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-2xl font-headline text-muted-foreground">Final Score</p>
-            <p className="text-6xl font-bold font-headline text-primary">{score.toFixed(1)}</p>
-          </div>
+      <div className="relative z-10 flex flex-col h-full items-center">
+        <div className="flex items-center gap-4 text-foreground mb-6">
+           <Image src="/bmc_logo.png" alt="BeatMyCrew Logo" width={56} height={56} className="w-14 h-14" unoptimized/>
+          <h1 className="text-5xl font-bold font-headline">My One Piece Crew</h1>
         </div>
 
-        <div className="grid grid-cols-4 gap-6 mt-8 flex-grow">
-          {ROLES.map(role => {
-            const member = crew[role];
-            const Icon = roleIcons[role];
-            const imgSrc = (isForCapture ? member?.dataUri : member?.imageUrl) || '/bmc_logo.png';
-            return (
-              <div key={role} className="bg-card rounded-lg p-3 flex flex-col items-center border border-border shadow-md">
-                <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                  <Icon className="w-5 h-5" />
-                  <span className="font-bold text-base">{role}</span>
-                </div>
-                <div className="w-full h-40 relative mt-1 rounded-sm overflow-hidden border border-border/50">
-                   {member ? (
-                     <Image 
-                      src={imgSrc} 
-                      alt={member.info.name} 
-                      fill 
-                      className="object-cover object-top" 
-                      sizes="250px"
-                      unoptimized={isForCapture}
-                    />
-                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-background/50">
-                      <span className="text-muted-foreground text-4xl font-bold">?</span>
-                    </div>
-                   )}
-                </div>
-                <p className="mt-2 font-bold text-lg text-center text-card-foreground truncate w-full h-6 flex items-center justify-center">
-                  {member ? member.info.name : ''}
-                </p>
-              </div>
-            );
-          })}
+        <div className="flex flex-col items-center gap-4 w-full">
+            {/* Captain */}
+            <div className="flex justify-center">
+                <MemberCard member={crew["Captain"]} role="Captain" isForCapture={isForCapture} />
+            </div>
+
+            {/* Vice-Captain */}
+            <div className="flex justify-center mt-2">
+                 <MemberCard member={crew["Vice-Captain"]} role="Vice-Captain" isForCapture={isForCapture} />
+            </div>
+            
+            {/* Core Crew */}
+            <div className="flex justify-center gap-4 mt-2">
+                <MemberCard member={crew["Navigator"]} role="Navigator" isForCapture={isForCapture} />
+                <MemberCard member={crew["Sniper"]} role="Sniper" isForCapture={isForCapture} />
+                <MemberCard member={crew["Cook"]} role="Cook" isForCapture={isForCapture} />
+                <MemberCard member={crew["Doctor"]} role="Doctor" isForCapture={isForCapture} />
+            </div>
+
+            {/* Shipwright & Combatant */}
+             <div className="flex justify-center gap-4 mt-2">
+                <MemberCard member={crew["Shipwright"]} role="Shipwright" isForCapture={isForCapture} />
+                <MemberCard member={crew["Combatant"]} role="Combatant" isForCapture={isForCapture} />
+            </div>
         </div>
         
         <p className="absolute bottom-2 right-4 text-muted-foreground/50 text-sm font-headline z-10">Generated by BeatMyCrew</p>
