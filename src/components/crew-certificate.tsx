@@ -24,20 +24,21 @@ const roleIcons: Record<Role, React.ComponentType<{ className?: string }>> = {
 };
 
 type CrewCertificateProps = {
-  crew: Record<Role, DraftedCharacterState | null>;
+  crew: Record<Role, (DraftedCharacterState & { dataUri?: string | null }) | null>;
   score: number;
   roomId: string;
-  isVisible: boolean;
+  id: string;
+  isForCapture: boolean;
 };
 
-export default function CrewCertificate({ crew, score, roomId, isVisible }: CrewCertificateProps) {
+export default function CrewCertificate({ crew, score, roomId, id, isForCapture }: CrewCertificateProps) {
   return (
     <div
-      id="crew-certificate"
+      id={id}
       className={cn(
         "fixed left-[-9999px] top-0 p-8 font-sans bg-card",
         "w-[1200px] h-[630px] overflow-hidden",
-        isVisible ? "opacity-100" : "opacity-0 -z-50"
+        { "z-50": isForCapture, "-z-50": !isForCapture }
       )}
     >
       <div className="relative z-10">
@@ -56,6 +57,7 @@ export default function CrewCertificate({ crew, score, roomId, isVisible }: Crew
           {ROLES.map(role => {
             const member = crew[role];
             const Icon = roleIcons[role];
+            const imgSrc = (isForCapture ? member?.dataUri : member?.imageUrl) || '/bmc_logo.png';
             return (
               <div key={role} className="bg-background/80 backdrop-blur-sm rounded-lg p-3 flex flex-col items-center border border-yellow-700/50 shadow-lg">
                 <div className="flex items-center gap-2 text-muted-foreground mb-2">
@@ -65,13 +67,13 @@ export default function CrewCertificate({ crew, score, roomId, isVisible }: Crew
                 {member ? (
                   <>
                     <div className="w-full h-40 relative mt-1 rounded overflow-hidden">
-                      <Image 
-                        src={member.imageUrl} 
+                       <Image 
+                        src={imgSrc} 
                         alt={member.info.name} 
                         fill 
                         className="object-cover object-top" 
                         sizes="250px"
-                        unoptimized
+                        unoptimized={isForCapture}
                       />
                     </div>
                     <p className="mt-2 font-bold text-lg text-center text-card-foreground truncate w-full">{member.info.name}</p>
@@ -90,3 +92,5 @@ export default function CrewCertificate({ crew, score, roomId, isVisible }: Crew
     </div>
   );
 };
+
+    

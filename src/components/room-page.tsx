@@ -56,6 +56,8 @@ export type DraftedCharacterState = {
   imageUrl: string;
 };
 
+type CrewWithDataUri = Record<Role, (DraftedCharacterState & { dataUri: string | null }) | null>;
+
 const getReportedIssues = (): string[] => {
     if (typeof window === 'undefined') return [];
     const issues = localStorage.getItem('reportedIssues');
@@ -140,6 +142,23 @@ const WantedPosterCard = ({
     )
 }
 
+async function getBase64Image(url: string): Promise<string | null> {
+    try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    } catch (error) {
+        console.error("Error converting image to Base64:", error);
+        return null;
+    }
+}
+
+
 export default function RoomPage({ roomId }: { roomId: string }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -163,6 +182,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const [isDraggingOver, setIsDraggingOver] = useState<Role | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [crewForCertificate, setCrewForCertificate] = useState<CrewWithDataUri | null>(null);
   
   const isMobile = useIsMobile();
   const [mobileCharSelected, setMobileCharSelected] = useState(false);
@@ -244,6 +264,8 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     setHasRerolled(false);
     setImageErrors({});
     setMobileCharSelected(false);
+    setIsCapturing(false);
+    setCrewForCertificate(null);
   }
 
   const handleSwapClick = (role: Role) => {
@@ -308,41 +330,67 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   }
 
   const handleSaveCrew = async () => {
-    const certificate = document.getElementById('crew-certificate');
-    if (!certificate) {
-      toast({ title: 'Error preparing certificate.', variant: 'destructive' });
-      return;
-    }
-  
     toast({ title: 'Generating your crew certificate...' });
-    setIsCapturing(true);
-  
-    // Brief delay to allow the browser to render the component before capture
-    await new Promise(resolve => setTimeout(resolve, 100));
-  
-    try {
-      const canvas = await html2canvas(certificate, {
-        width: 1200,
-        height: 630,
-        scale: 2
-      });
-  
-      const image = canvas.toDataURL('image/png', 1.0);
-      const link = document.createElement('a');
-      link.href = image;
-      link.download = `beat-my-crew-${roomId}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-  
-      toast({ title: 'Crew saved!', description: 'Your crew certificate has been downloaded.' });
-    } catch (error) {
-      console.error('Error generating canvas:', error);
-      toast({ title: 'Could not save image', description: 'There was an error creating your certificate.', variant: 'destructive' });
-    } finally {
-      setIsCapturing(false);
-    }
+
+    // Create a version of the crew with Base64 data URIs for images
+    const crewWithDataUris: CrewWithDataUri = { ...myCrew };
+    const promises = ROLES.map(async (role) => {
+        const member = myCrew[role];
+        if (member) {
+            const dataUri = await getBase64Image(`/api/image-proxy?url=${encodeURIComponent(member.imageUrl)}`);
+            crewWithDataUris[role] = { ...member, dataUri: dataUri || member.imageUrl };
+        }
+    });
+
+    await Promise.all(promises);
+    setCrewForCertificate(crewWithDataUris);
+    setIsCapturing(true); // This will trigger the useEffect below
   };
+  
+  useEffect(() => {
+    if (isCapturing && crewForCertificate) {
+      const certificate = document.getElementById('crew-certificate-capture');
+      if (!certificate) {
+        toast({ title: 'Error preparing certificate.', variant: 'destructive' });
+        setIsCapturing(false);
+        setCrewForCertificate(null);
+        return;
+      }
+  
+      const capture = async () => {
+         try {
+            const canvas = await html2canvas(certificate, {
+              width: 1200,
+              height: 630,
+              scale: 2,
+              useCORS: true, 
+              allowTaint: true
+            });
+      
+            const image = canvas.toDataURL('image/png', 1.0);
+            const link = document.createElement('a');
+            link.href = image;
+            link.download = `beat-my-crew-${roomId}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+      
+            toast({ title: 'Crew saved!', description: 'Your crew certificate has been downloaded.' });
+          } catch (error) {
+            console.error('Error generating canvas:', error);
+            toast({ title: 'Could not save image', description: 'There was an error creating your certificate.', variant: 'destructive' });
+          } finally {
+            setIsCapturing(false);
+            setCrewForCertificate(null);
+          }
+      };
+
+      // Brief delay to allow the browser to render the component with data URIs before capture
+      const timer = setTimeout(capture, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isCapturing, crewForCertificate, roomId, toast]);
   
 
   // --- Drag and Drop / Mobile Tap Handlers ---
@@ -605,9 +653,9 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                                 <RotateCw className="mr-2 h-4 w-4" />
                                 Assemble a New Crew
                             </Button>
-                            <Button onClick={handleSaveCrew} size="lg" variant="outline">
+                            <Button onClick={handleSaveCrew} size="lg" variant="outline" disabled={isCapturing}>
                                 <Download className="mr-2 h-4 w-4" />
-                                Save Crew
+                                {isCapturing ? 'Saving...' : 'Save Crew'}
                             </Button>
                         </div>
                     </div>
@@ -616,8 +664,18 @@ export default function RoomPage({ roomId }: { roomId: string }) {
          </Card>
       )}
 
-    {phase === 'result' && <CrewCertificate crew={myCrew} score={finalScore} roomId={roomId} isVisible={isCapturing} />}
-
+    {/* This is the component that will be screenshotted. It's positioned off-screen. */}
+    {isCapturing && crewForCertificate && (
+      <CrewCertificate 
+        id="crew-certificate-capture"
+        crew={crewForCertificate} 
+        score={finalScore} 
+        roomId={roomId}
+        isForCapture={true}
+      />
+    )}
     </div>
   );
 }
+
+    
