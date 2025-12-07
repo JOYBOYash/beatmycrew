@@ -71,8 +71,8 @@ const MemberCard = ({
           </div>
         )}
       </div>
-      <p className="mt-2 font-headline font-bold text-base text-center text-card-foreground h-10 flex items-center justify-center">
-        <Balancer>{member ? member.info.name : ''}</Balancer>
+      <p className="mt-2 font-headline font-bold text-base text-center text-card-foreground h-6 truncate w-full">
+        {member ? member.info.name : ''}
       </p>
       <div className="flex items-center justify-center gap-1.5 text-card-foreground/80 -mt-1">
         <Icon className="w-4 h-4" />
