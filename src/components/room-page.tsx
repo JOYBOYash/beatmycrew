@@ -155,6 +155,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   );
   const [finalScore, setFinalScore] = useState<number>(0);
   const [swappingCharacterRole, setSwappingCharacterRole] = useState<Role | null>(null);
+  const [isSwapMode, setIsSwapMode] = useState(false);
   const [hasSwapped, setHasSwapped] = useState(false);
   const [hasRerolled, setHasRerolled] = useState(false);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
@@ -232,40 +233,64 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     setMyCrew(Object.fromEntries(ROLES.map(r => [r, null])) as Record<Role, DraftedCharacterState | null>);
     setFinalScore(0);
     setSwappingCharacterRole(null);
+    setIsSwapMode(false);
     setHasSwapped(false);
     setHasRerolled(false);
     setImageErrors({});
   }
 
-  const handleInitiateSwap = (role: Role) => {
-    if (hasSwapped || phase !== 'swapping' || swappingCharacterRole === role) {
-        setSwappingCharacterRole(null);
+  const handleSwapClick = (role: Role) => {
+    if (!isSwapMode || hasSwapped) return;
+
+    if (!swappingCharacterRole) {
+      // Start the swap
+      setSwappingCharacterRole(role);
+      toast({
+        title: 'Select a crew member to swap with',
+        description: `You selected ${myCrew[role]?.info.name}.`,
+      });
+    } else if (swappingCharacterRole === role) {
+      // Cancel the swap
+      setSwappingCharacterRole(null);
+      toast({
+        title: 'Swap canceled',
+      });
+    } else {
+      // Perform the swap
+      const sourceCharacter = myCrew[swappingCharacterRole];
+      const targetCharacter = myCrew[role];
+  
+      const newCrew = { ...myCrew };
+      newCrew[swappingCharacterRole] = targetCharacter;
+      newCrew[role] = sourceCharacter;
+  
+      setMyCrew(newCrew);
+      setSwappingCharacterRole(null);
+      setHasSwapped(true);
+      setIsSwapMode(false); // Exit swap mode after a successful swap
+      toast({
+          title: "Swap Successful!",
+          description: `${sourceCharacter?.info.name} and ${targetCharacter?.info.name} have swapped roles.`,
+      });
+    }
+  };
+
+  const toggleSwapMode = () => {
+    if (hasSwapped) {
+        toast({ title: "You've already made a swap this round.", variant: "destructive" });
         return;
     }
-    setSwappingCharacterRole(role);
-  };
-  
-  const handlePerformSwap = (targetRole: Role) => {
-    if (!swappingCharacterRole || swappingCharacterRole === targetRole) {
-      setSwappingCharacterRole(null);
-      return;
+    if (phase !== 'swapping') return;
+
+    const newSwapMode = !isSwapMode;
+    setIsSwapMode(newSwapMode);
+    setSwappingCharacterRole(null); // Reset selection when toggling mode
+    if (newSwapMode) {
+        toast({ title: "Swap Mode Activated", description: "Select two crew members to swap their roles." });
+    } else {
+        toast({ title: "Swap Mode Deactivated" });
     }
-  
-    const sourceCharacter = myCrew[swappingCharacterRole];
-    const targetCharacter = myCrew[targetRole];
-  
-    const newCrew = { ...myCrew };
-    newCrew[swappingCharacterRole] = targetCharacter;
-    newCrew[targetRole] = sourceCharacter;
-  
-    setMyCrew(newCrew);
-    setSwappingCharacterRole(null);
-    setHasSwapped(true);
-    toast({
-        title: "Swap Successful!",
-        description: `${sourceCharacter?.info.name} and ${targetCharacter?.info.name} have swapped roles.`,
-    });
-  };
+  }
 
   const handleFinish = () => {
     setPhase('voting');
@@ -311,7 +336,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     const Icon = roleIcons[role];
 
     const isSwapSource = swappingCharacterRole === role;
-    const canBeSwapTarget = swappingCharacterRole !== null && swappingCharacterRole !== role;
+    const canBeSwapTarget = isSwapMode && !hasSwapped && crewMember !== null;
 
     return (
       <div 
@@ -340,9 +365,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
               hasError={!!imageErrors[crewMember.info.name]}
               isSwapSource={isSwapSource}
               canBeSwapTarget={canBeSwapTarget}
-              onClick={() => {
-                if (canBeSwapTarget) handlePerformSwap(role);
-              }}
+              onClick={() => handleSwapClick(role)}
             />
           ) : (
              <div className="w-full h-full flex items-center justify-center relative overflow-hidden bg-card/50 group border-4 border-yellow-800/60 p-2 text-muted-foreground text-4xl font-bold">
@@ -428,11 +451,13 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                     {
                       phase === 'drafting' ? `Drag your drafted character into an empty slot.` : 
                       phase === 'swapping' ? (
-                          swappingCharacterRole 
-                              ? `Select a crew member to swap with ${myCrew[swappingCharacterRole]?.info.name}.`
+                          isSwapMode
+                              ? swappingCharacterRole
+                                  ? `Select a crew member to swap with ${myCrew[swappingCharacterRole]?.info.name}.`
+                                  : 'Select the first crew member to swap.'
                               : hasSwapped 
-                                  ? "Your swap has been made." 
-                                  : "Your final crew. You can make one swap."
+                                  ? "Your swap has been made for this round." 
+                                  : "Your crew is assembled. You can make one swap."
                       ) : 'Your masterpiece!'
                     }
                   </CardDescription>
@@ -454,13 +479,13 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                       <Dices className="mr-2 h-4 w-4" />
                       Re-roll
                   </Button>
-                  <Button variant="outline" onClick={() => handleInitiateSwap(ROLES[0])} disabled={!crewIsFull || phase !== 'swapping' || hasSwapped}>
+                  <Button variant="outline" onClick={toggleSwapMode} disabled={!crewIsFull || phase !== 'swapping' || hasSwapped}>
                       <Replace className="mr-2 h-4 w-4" />
-                      {swappingCharacterRole ? 'Cancel Swap' : 'Swap Roles'}
+                      {isSwapMode ? 'Cancel Swap' : 'Swap Roles'}
                   </Button>
 
                   {phase === "swapping" && (
-                      <Button onClick={handleFinish} size="lg" disabled={swappingCharacterRole !== null} className="flex-grow">
+                      <Button onClick={handleFinish} size="lg" disabled={isSwapMode} className="flex-grow">
                           Finish and Proceed to Voting
                       </Button>
                   )}
