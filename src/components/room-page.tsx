@@ -6,7 +6,7 @@ import React from 'react';
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import html2canvas from "html2canvas";
+import { toPng } from 'html-to-image';
 import {
   Character,
   Role,
@@ -323,6 +323,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
   const handleSaveCrew = async () => {
     toast({ title: 'Generating your crew certificate...' });
+    setIsCapturing(true); // Show the certificate component
 
     // Create a version of the crew with Base64 data URIs for images
     const crewWithDataUris: CrewWithDataUri = { ...myCrew };
@@ -333,16 +334,16 @@ export default function RoomPage({ roomId }: { roomId: string }) {
             crewWithDataUris[role] = { ...member, dataUri: dataUri || member.imageUrl };
         }
     });
-
+    
     await Promise.all(promises);
     setCrewForCertificate(crewWithDataUris);
-    setIsCapturing(true); // This will trigger the useEffect below
+    // The capture will be triggered by a useEffect hook that watches crewForCertificate
   };
   
   useEffect(() => {
-    if (isCapturing && crewForCertificate) {
-      const certificate = document.getElementById('crew-certificate-capture');
-      if (!certificate) {
+    if (crewForCertificate) {
+      const certificateNode = document.getElementById('crew-certificate-capture');
+      if (!certificateNode) {
         toast({ title: 'Error preparing certificate.', variant: 'destructive' });
         setIsCapturing(false);
         setCrewForCertificate(null);
@@ -351,15 +352,15 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   
       const capture = async () => {
          try {
-            const canvas = await html2canvas(certificate, {
-              width: 1200,
-              height: 630,
-              scale: 2,
+            const dataUrl = await toPng(certificateNode, {
+              quality: 1.0,
+              pixelRatio: 2,
+              width: certificateNode.clientWidth,
+              height: certificateNode.clientHeight,
             });
       
-            const image = canvas.toDataURL('image/png', 1.0);
             const link = document.createElement('a');
-            link.href = image;
+            link.href = dataUrl;
             link.download = `beat-my-crew-${roomId}.png`;
             document.body.appendChild(link);
             link.click();
@@ -380,7 +381,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
       return () => clearTimeout(timer);
     }
-  }, [isCapturing, crewForCertificate, roomId, toast]);
+  }, [crewForCertificate, roomId, toast]);
   
 
   // --- Drag and Drop / Mobile Tap Handlers ---
