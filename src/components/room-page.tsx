@@ -371,7 +371,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       {(phase === "drafting" || phase === "swapping") && (
         <div className="grid md:grid-cols-2 gap-8">
           {phase === "drafting" && (
-            <Card className="flex flex-col bg-card/50 backdrop-blur-sm border-white/20">
+            <Card className="flex flex-col animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
               <CardHeader>
                 <CardTitle>Draft a Character</CardTitle>
                 <CardDescription>
@@ -414,8 +414,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 {draftedCharacter && (
                   <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 mt-4">
                       {ROLES.filter(r => myCrew[r] === null).map(role => (
-                          <Button key={role} variant="secondary" onClick={() => handleAssignRole(role)}>Assign to {role}</Button>
-                      ))}
+                          <Button key={role} variant="secondary" onClick={() => handleAssignRole(role)}>Assign to {role}</Button>                      ))}
                       <Button variant="outline" onClick={handleReroll} disabled={hasRerolled}>
                         <RefreshCcw className="mr-2 h-4 w-4" />
                         Re-roll
@@ -427,7 +426,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
           )}
 
           {phase === "swapping" && (
-            <Card className="bg-card/50 backdrop-blur-sm border-white/20">
+            <Card className="animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
                 <CardHeader>
                     <CardTitle>Finalize Your Crew</CardTitle>
                     <CardDescription>
@@ -456,7 +455,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
           )}
           
           <div className="grid gap-8">
-            <Card className="bg-card/50 backdrop-blur-sm border-white/20">
+            <Card className="animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
               <CardHeader>
                 <CardTitle>Your Crew</CardTitle>
                 <CardDescription>
@@ -477,7 +476,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       )}
 
       {(phase === "voting" || phase === "result") && (
-         <Card className="w-full max-w-5xl mx-auto bg-card/80 backdrop-blur-sm border-white/20">
+         <Card className="w-full max-w-5xl mx-auto animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
             <CardHeader className="text-center">
                 <CardTitle className="text-3xl font-headline">
                 {phase === 'voting' ? "Rate Your Masterpiece" : "Final Verdict"}

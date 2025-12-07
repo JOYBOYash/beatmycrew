@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { updateAlias } from './actions';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const getReportedIssues = (): string[] => {
   if (typeof window === 'undefined') return [];
@@ -87,7 +88,7 @@ export default function AdminPage() {
         Use this page to correct image loading issues by providing the correct Fandom wiki name for characters.
       </p>
 
-      <Card className="bg-card/80 backdrop-blur-sm border-white/20">
+      <Card className="animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
