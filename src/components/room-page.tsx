@@ -356,21 +356,11 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
   return (
     <div className="flex flex-col gap-4 h-full p-4">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-headline">The Grand Line Draft</h1>
-          <div className="text-muted-foreground">
-            Room Code: <Badge variant="secondary">{roomId}</Badge>
-          </div>
-        </div>
-        <div className="flex gap-2">
-            <Button variant="outline" asChild>
-                <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" />Back</Link>
-            </Button>
-        </div>
-      </header>
-      
-      <Separator />
+      <div className="w-full flex justify-start">
+        <Button variant="outline" asChild>
+            <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" />Back to Home</Link>
+        </Button>
+      </div>
 
       {(phase === "drafting" || phase === "swapping") && (
         <div className="flex-grow flex flex-col gap-4 items-center">
