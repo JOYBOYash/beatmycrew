@@ -93,7 +93,7 @@ const WantedPosterCard = ({
         <div
             onClick={onClick}
             className={cn(
-                "w-full h-full bg-[url(/card_bg.png)] bg-cover bg-center border-4 border-yellow-800/60 p-2 flex flex-col items-center gap-1 shadow-lg relative group",
+                "w-full h-full bg-[url(/card_bg.png)] bg-cover bg-center p-2 flex flex-col items-center gap-1 shadow-lg relative group",
                 {
                     "cursor-pointer hover:ring-2 hover:ring-primary": canBeSwapTarget,
                     "ring-2 ring-accent ring-offset-2 ring-offset-background rounded-lg": isSwapSource,
@@ -102,7 +102,7 @@ const WantedPosterCard = ({
             {...props}
         >
             <h3 className="font-headline font-black text-lg tracking-wider text-card-foreground/80">WANTED</h3>
-            <div className="w-full h-32 relative bg-black/10 border-2 border-yellow-800/60">
+            <div className="w-full h-40 relative bg-black/10 border-2 border-yellow-800/20">
                  <Image
                     src={showFallback ? '/bmc_logo.png' : character.imageUrl}
                     alt={character.info.name}
@@ -112,7 +112,7 @@ const WantedPosterCard = ({
                         "object-cover",
                         showFallback ? "object-contain p-2" : "object-top"
                     )}
-                    sizes="(max-width: 768px) 100px, 100px"
+                    sizes="(max-width: 768px) 150px, 150px"
                     onError={onImageError}
                   />
             </div>
@@ -379,7 +379,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
         </div>
         <div
           className={cn(
-            "w-[140px] h-[220px] relative transition-all duration-200",
+            "w-[160px] h-[250px] relative transition-all duration-200",
             {
               'bg-primary/20 ring-2 ring-primary rounded-lg': isDraggingOver === role || isMobileAssignable
             }
@@ -396,7 +396,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
             />
           ) : (
              <div className={cn(
-                "w-full h-full flex items-center justify-center relative overflow-hidden bg-card/50 group border-4 border-yellow-800/60 p-2 text-muted-foreground text-4xl font-bold",
+                "w-full h-full flex items-center justify-center relative overflow-hidden bg-card/50 group border-2 border-dashed border-yellow-800/40 p-2 text-muted-foreground text-4xl font-bold",
                 isMobileAssignable && "cursor-pointer"
              )}>
               ?
@@ -572,5 +572,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     </div>
   );
 }
+
+    
 
     
