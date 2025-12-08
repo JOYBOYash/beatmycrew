@@ -149,7 +149,7 @@ export default function CrewCertificate({
             <MemberCard
               member={crew['Combatant']}
               role="Combatant"
-              isForCapture={isFórCapture}
+              isForCapture={isForCapture}
             />
           </div>
         </div>
@@ -169,4 +169,3 @@ export default function CrewCertificate({
     </div>
   );
 }
-    
