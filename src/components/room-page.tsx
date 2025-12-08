@@ -32,7 +32,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import CrewCertificate from "./crew-certificate";
 import { Separator } from "./ui/separator";
 
-type GamePhase = "drafting" | "swapping" | "voting" | "result";
+type GamePhase = "drafting" | "swapping" | "result";
 
 const roleIcons: Record<Role, React.ComponentType<{ className?: string }>> = {
   Captain: Anchor,
@@ -173,10 +173,10 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   const [swappingCharacterRole, setSwappingCharacterRole] = useState<Role | null>(null);
   const [isSwapMode, setIsSwapMode] = useState(false);
   const [hasSwapped, setHasSwapped] = useState(false);
-  const [hasRerolled, setHasRerolled] = useState(false);
+  const [hasRerolled, setRerolled] = useState(false);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const [isDraggingOver, setIsDraggingOver] = useState<Role | null>(null);
-  const [isCapturing, setIsCapturing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [crewForCertificate, setCrewForCertificate] = useState<CrewWithDataUri | null>(null);
   
   const isMobile = useIsMobile();
@@ -219,7 +219,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
   const handleReroll = () => {
     if (hasRerolled || !draftedCharacter) return;
-    setHasRerolled(true);
+    setRerolled(true);
     toast({
       title: "Re-rolled!",
       description: "You got a new character.",
@@ -292,10 +292,10 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     setSwappingCharacterRole(null);
     setIsSwapMode(false);
     setHasSwapped(false);
-    setHasRerolled(false);
+    setRerolled(false);
     setImageErrors({});
     setMobileCharSelected(false);
-    setIsCapturing(false);
+    setIsSaving(false);
     setCrewForCertificate(null);
   }
 
@@ -364,8 +364,11 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   }
 
   const handleSaveCrew = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
     toast({ title: 'Generating your crew certificate...' });
-
+  
+    // Prepare crew data with Base64 image URIs
     const crewWithDataUris: CrewWithDataUri = { ...myCrew };
     const promises = ROLES.map(async (role) => {
         const member = myCrew[role];
@@ -377,50 +380,43 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     
     await Promise.all(promises);
     setCrewForCertificate(crewWithDataUris);
-    setIsCapturing(true); 
-  };
-  
-  useEffect(() => {
-    if (isCapturing && crewForCertificate) {
+
+    // Use a timeout to ensure the state is updated and the component re-renders
+    // before we try to capture it.
+    setTimeout(async () => {
       const certificateNode = document.getElementById('crew-certificate-capture');
       if (!certificateNode) {
         toast({ title: 'Error preparing certificate.', variant: 'destructive' });
-        setIsCapturing(false);
+        setIsSaving(false);
         setCrewForCertificate(null);
         return;
       }
+      
+      try {
+        const dataUrl = await toPng(certificateNode, {
+          quality: 1.0,
+          pixelRatio: 2,
+          width: 1200,
+          height: 630,
+        });
   
-      const capture = async () => {
-         try {
-            const dataUrl = await toPng(certificateNode, {
-              quality: 1.0,
-              pixelRatio: 2,
-              width: certificateNode.clientWidth,
-              height: certificateNode.clientHeight,
-            });
-      
-            const link = document.createElement('a');
-            link.href = dataUrl;
-            link.download = `beat-my-crew-${roomId}.png`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-      
-            toast({ title: 'Crew saved!', description: 'Your crew certificate has been downloaded.' });
-          } catch (error) {
-            console.error('Error generating canvas:', error);
-            toast({ title: 'Could not save image', description: 'There was an error creating your certificate.', variant: 'destructive' });
-          } finally {
-            setIsCapturing(false);
-            setCrewForCertificate(null);
-          }
-      };
-
-      const timer = setTimeout(capture, 500);
-
-      return () => clearTimeout(timer);
-    }
-  }, [isCapturing, crewForCertificate, roomId, toast]);
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = `beat-my-crew-${roomId}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+  
+        toast({ title: 'Crew saved!', description: 'Your crew certificate has been downloaded.' });
+      } catch (error) {
+        console.error('Error generating canvas:', error);
+        toast({ title: 'Could not save image', description: 'There was an error creating your certificate.', variant: 'destructive' });
+      } finally {
+        setIsSaving(false);
+        setCrewForCertificate(null); // Clean up data
+      }
+    }, 100); // A short delay is often sufficient
+  };
   
 
   // --- Drag and Drop / Mobile Tap Handlers ---
@@ -437,7 +433,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     if (!isMobile || !mobileCharSelected || myCrew[role] || !draftedCharacter) return;
     setMyCrew(prev => ({ ...prev, [role]: draftedCharacter }));
     setDraftedCharacter(null);
-    setHasRerolled(false);
+    setRerolled(false);
     setMobileCharSelected(false);
   }
 
@@ -455,7 +451,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       const character = JSON.parse(characterData) as DraftedCharacterState;
       setMyCrew(prev => ({ ...prev, [role]: character }));
       setDraftedCharacter(null);
-      setHasRerolled(false);
+      setRerolled(false);
     }
     setIsDraggingOver(null);
   };
@@ -639,7 +635,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
         </div>
       )}
 
-      {(phase === "voting" || phase === "result") && (
+      {(phase === "result") && (
          <Card className="w-full max-w-7xl mx-auto animate-map-open bg-card/80 backdrop-blur-sm border-white/20">
             <CardHeader className="text-center">
                 <CardTitle className="text-3xl font-headline">
@@ -671,9 +667,9 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                         <Separator className="w-full bg-yellow-800/20" />
 
                         <div className="flex flex-col items-stretch gap-4 w-full">
-                            <Button onClick={handleSaveCrew} size="lg" variant="outline" disabled={isCapturing}>
+                            <Button onClick={handleSaveCrew} size="lg" variant="outline" disabled={isSaving}>
                                 <Download className="mr-2 h-4 w-4" />
-                                {isCapturing ? 'Saving...' : 'Save Crew'}
+                                {isSaving ? 'Saving...' : 'Save Crew'}
                             </Button>
                              <Button onClick={handlePlayAgain} size="lg">
                                 <RotateCw className="mr-2 h-4 w-4" />
@@ -686,16 +682,13 @@ export default function RoomPage({ roomId }: { roomId: string }) {
          </Card>
       )}
 
-    {isCapturing && crewForCertificate && (
-       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-          <CrewCertificate 
-            id="crew-certificate-capture"
-            crew={crewForCertificate} 
-            roomId={roomId}
-            isForCapture={true}
-          />
-       </div>
-    )}
+      {/* This component is now always rendered but placed off-screen */}
+      <CrewCertificate 
+        id="crew-certificate-capture"
+        crew={crewForCertificate || myCrew}
+        roomId={roomId}
+        isForCapture={true} // `isForCapture` now just controls internal image sources
+      />
     </div>
   );
 }
