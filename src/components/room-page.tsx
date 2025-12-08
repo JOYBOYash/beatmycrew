@@ -368,34 +368,33 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     setIsSaving(true);
     toast({ title: 'Generating your crew certificate...' });
   
-    // Prepare crew data with Base64 image URIs
-    const crewWithDataUris: CrewWithDataUri = { ...myCrew };
+    const newCrewForCert: CrewWithDataUri = { ...myCrew };
     const promises = ROLES.map(async (role) => {
         const member = myCrew[role];
         if (member) {
             const dataUri = await getBase64Image(member.imageUrl);
-            crewWithDataUris[role] = { ...member, dataUri: dataUri || member.imageUrl };
+            newCrewForCert[role] = { ...member, dataUri };
+        } else {
+            newCrewForCert[role] = null;
         }
     });
-    
-    await Promise.all(promises);
-    setCrewForCertificate(crewWithDataUris);
 
-    // Use a timeout to ensure the state is updated and the component re-renders
-    // before we try to capture it.
+    await Promise.all(promises);
+    setCrewForCertificate(newCrewForCert);
+
+    // Use a timeout to ensure the DOM has re-rendered with the new data URIs
     setTimeout(async () => {
       const certificateNode = document.getElementById('crew-certificate-capture');
       if (!certificateNode) {
         toast({ title: 'Error preparing certificate.', variant: 'destructive' });
         setIsSaving(false);
-        setCrewForCertificate(null);
         return;
       }
       
       try {
         const dataUrl = await toPng(certificateNode, {
           quality: 1.0,
-          pixelRatio: 2,
+          pixelRatio: 1, // Use 1 for performance, can increase for quality
           width: 1200,
           height: 630,
         });
@@ -409,13 +408,13 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   
         toast({ title: 'Crew saved!', description: 'Your crew certificate has been downloaded.' });
       } catch (error) {
-        console.error('Error generating canvas:', error);
+        console.error('Error generating image:', error);
         toast({ title: 'Could not save image', description: 'There was an error creating your certificate.', variant: 'destructive' });
       } finally {
         setIsSaving(false);
-        setCrewForCertificate(null); // Clean up data
+        setCrewForCertificate(null); // Clean up temp state
       }
-    }, 100); // A short delay is often sufficient
+    }, 100);
   };
   
 
@@ -687,7 +686,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
         id="crew-certificate-capture"
         crew={crewForCertificate || myCrew}
         roomId={roomId}
-        isForCapture={true} // `isForCapture` now just controls internal image sources
+        isForCapture={!!crewForCertificate}
       />
     </div>
   );
