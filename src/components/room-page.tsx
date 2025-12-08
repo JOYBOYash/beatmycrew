@@ -524,18 +524,12 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
   return (
     <div className="flex flex-col gap-4 h-full p-4">
-      <div className="w-full flex justify-start">
-        <Button variant="outline" asChild>
-            <Link href="/build"><Ship className="mr-2 h-4 w-4" />Back to Lobby</Link>
-        </Button>
-      </div>
-
       {(phase === "drafting" || phase === "swapping") && (
         <div className="flex-grow flex flex-col gap-4 items-center">
           <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
             {/* Left Column: Drafting */}
             <div className="md:col-span-1 flex flex-col gap-4">
-              <Card className="flex-grow flex flex-col animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
+              <Card className="flex-grow flex flex-col animate-map-open bg-card/80 backdrop-blur-sm border-white/20">
                 <CardHeader>
                   <CardTitle>DRAFTING ARENA</CardTitle>
                   <CardDescription>
@@ -594,7 +588,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
             {/* Right Column: Crew Roster */}
             <div className="md:col-span-2">
-              <Card className="h-full flex flex-col animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
+              <Card className="h-full flex flex-col animate-map-open bg-card/80 backdrop-blur-sm border-white/20">
                 <CardHeader>
                   <CardTitle>Your Crew Roster</CardTitle>
                    <CardDescription>
