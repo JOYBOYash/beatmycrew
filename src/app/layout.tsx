@@ -31,7 +31,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
       </head>
-      <body className={cn("font-body antialiased min-h-screen")}>
+      <body className={cn("font-body antialiased min-h-screen bg-background")}>
         <VideoBackground />
         <div className="relative z-10 pb-24">{children}</div>
         <TaskbarNav />
