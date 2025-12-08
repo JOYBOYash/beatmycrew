@@ -19,6 +19,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -79,7 +80,7 @@ const WantedPosterCard = ({
     hasError: boolean;
     isSwapSource?: boolean;
     canBeSwapTarget?: boolean;
-    onClick?: () => void;
+onClick?: () => void;
     [key: string]: any;
 }) => {
     const isApiFallback = character.imageUrl.includes('bmc_logo.png');
@@ -593,7 +594,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
             {/* Right Column: Crew Roster */}
             <div className="md:col-span-2">
-              <Card className="h-full animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
+              <Card className="h-full flex flex-col animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
                 <CardHeader>
                   <CardTitle>Your Crew Roster</CardTitle>
                    <CardDescription>
@@ -611,39 +612,32 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                     }
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-6">
+                <CardContent className="grid flex-grow grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-6">
                     {ROLES.map(role => renderCrewMemberSlot(role, false))}
                 </CardContent>
-              </Card>
-            </div>
-          </div>
-          
-          {/* Actions Toolbar */}
-          <Card className="w-full max-w-4xl animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
-              <CardHeader>
-                  <CardTitle>Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col md:flex-row items-center justify-center gap-4">
-                  <Button variant="outline" onClick={handleReroll} disabled={hasRerolled || !draftedCharacter}>
+                 <CardFooter className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 p-4">
+                  <Button variant="outline" size="sm" onClick={handleReroll} disabled={hasRerolled || !draftedCharacter}>
                       <Dices className="mr-2 h-4 w-4" />
                       Re-roll
                   </Button>
-                  <Button variant="outline" onClick={handleRandomizeCrew} disabled={crewIsFull}>
+                  <Button variant="outline" size="sm" onClick={handleRandomizeCrew} disabled={crewIsFull}>
                         <Dices className="mr-2 h-4 w-4" />
                         Randomize Team
                     </Button>
-                  <Button variant="outline" onClick={toggleSwapMode} disabled={!crewIsFull || phase !== 'swapping' || hasSwapped}>
+                  <Button variant="outline" size="sm" onClick={toggleSwapMode} disabled={!crewIsFull || phase !== 'swapping' || hasSwapped}>
                       <Replace className="mr-2 h-4 w-4" />
                       {isSwapMode ? 'Cancel Swap' : 'Swap Roles'}
                   </Button>
 
                   {phase === "swapping" && (
-                      <Button onClick={handleFinish} size="lg" disabled={isSwapMode} className="flex-grow">
-                          Finish and Proceed to Voting
+                      <Button onClick={handleFinish} disabled={isSwapMode} className="flex-grow">
+                          Finish & Vote
                       </Button>
                   )}
-              </CardContent>
-          </Card>
+              </CardFooter>
+              </Card>
+            </div>
+          </div>
         </div>
       )}
 
