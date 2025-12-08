@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 import VideoBackground from "@/components/video-background";
+import TaskbarNav from "@/components/taskbar-nav";
 
 export const metadata: Metadata = {
   title: "BeatMyCrew",
@@ -32,7 +33,8 @@ export default function RootLayout({
       </head>
       <body className={cn("font-body antialiased min-h-screen")}>
         <VideoBackground />
-        <div className="relative z-10">{children}</div>
+        <div className="relative z-10 pb-24">{children}</div>
+        <TaskbarNav />
         <Toaster />
       </body>
     </html>

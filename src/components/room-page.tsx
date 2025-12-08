@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Download, Home, Share2, Users, Star, RotateCw, Replace, X, AlertTriangle, Settings, RefreshCcw, Dices, Swords, ArrowLeft, Anchor, Award, Compass, Crosshair, ChefHat, Stethoscope, Hammer } from "lucide-react";
+import { Download, Home, Share2, Users, Star, RotateCw, Replace, X, AlertTriangle, Settings, RefreshCcw, Dices, Swords, ArrowLeft, Anchor, Award, Compass, Crosshair, ChefHat, Stethoscope, Hammer, Ship } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -525,7 +525,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     <div className="flex flex-col gap-4 h-full p-4">
       <div className="w-full flex justify-start">
         <Button variant="outline" asChild>
-            <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" />Back to Home</Link>
+            <Link href="/build"><Ship className="mr-2 h-4 w-4" />Back to Lobby</Link>
         </Button>
       </div>
 
