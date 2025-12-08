@@ -30,6 +30,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import CrewCertificate from "./crew-certificate";
+import { Separator } from "./ui/separator";
 
 type GamePhase = "drafting" | "swapping" | "voting" | "result";
 
@@ -352,7 +353,10 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   }
 
   const handleFinish = () => {
-    setPhase('voting');
+    const baseScore = 7.5;
+    const randomFactor = (Math.random() - 0.5) * 3; // a value between -1.5 and 1.5
+    setFinalScore(Math.max(1, Math.min(10, baseScore + randomFactor)));
+    setPhase('result');
   }
   
   const handleImageError = (characterName: string) => {
@@ -625,7 +629,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
                   {phase === "swapping" && (
                       <Button onClick={handleFinish} disabled={isSwapMode} className="flex-grow">
-                          Finish & Vote
+                          Finish & Rate Crew
                       </Button>
                   )}
               </CardFooter>
@@ -636,47 +640,48 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       )}
 
       {(phase === "voting" || phase === "result") && (
-         <Card className="w-full max-w-5xl mx-auto animate-map-open bg-card/80 backdrop-blur-sm border-white/20">
+         <Card className="w-full max-w-7xl mx-auto animate-map-open bg-card/80 backdrop-blur-sm border-white/20">
             <CardHeader className="text-center">
                 <CardTitle className="text-3xl font-headline">
-                {phase === 'voting' ? "Rate Your Masterpiece" : "Final Verdict"}
+                    Final Verdict
                 </CardTitle>
                 <CardDescription>
-                {phase === 'voting' ? "Your crew is assembled! How powerful do they seem?" : `Your crew has been rated!`}
+                    Your crew has been rated!
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-                    {ROLES.map(role => renderCrewMemberSlot(role, true))}
-                </div>
-
-                {phase === 'voting' && (
-                  <div className="flex flex-col items-center gap-4">
-                      <Slider defaultValue={[5]} max={10} step={1} className="max-w-md" onValueCommit={handleSubmitRating} />
-                      <p className="text-sm text-muted-foreground">Slide to submit your rating from 1 to 10</p>
-                  </div>
-                )}
-
-                {phase === 'result' && (
-                    <div className="text-center flex flex-col items-center gap-4 animate-in fade-in duration-500">
-                        <div className="flex items-center gap-4">
-                            <Star className="text-accent w-10 h-10" fill="currentColor" />
-                            <p className="text-6xl font-bold font-headline">{finalScore.toFixed(1)}</p>
-                            <Star className="text-accent w-10 h-10" fill="currentColor" />
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                    <div className="md:col-span-3">
+                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            {ROLES.map(role => renderCrewMemberSlot(role, true))}
                         </div>
-                        <p className="text-lg text-muted-foreground">An impressive score!</p>
-                        <div className="flex items-center gap-4 mt-4">
-                            <Button onClick={handlePlayAgain} size="lg">
-                                <RotateCw className="mr-2 h-4 w-4" />
-                                Assemble a New Crew
-                            </Button>
+                    </div>
+
+                    <div className="md:col-span-1 flex flex-col items-center justify-center gap-6 p-4 border-l border-yellow-800/20">
+                        <div className="text-center animate-in fade-in duration-500">
+                             <div className="flex items-center justify-center gap-4">
+                                <Star className="text-accent w-10 h-10" fill="currentColor" />
+                                <p className="text-6xl font-bold font-headline">{finalScore.toFixed(1)}</p>
+                                <Star className="text-accent w-10 h-10" fill="currentColor" />
+                            </div>
+                            <p className="text-lg text-muted-foreground mt-2">An impressive score!</p>
+                        </div>
+                        <Slider defaultValue={[finalScore]} max={10} step={0.1} className="w-full" disabled />
+                        
+                        <Separator className="w-full bg-yellow-800/20" />
+
+                        <div className="flex flex-col items-stretch gap-4 w-full">
                             <Button onClick={handleSaveCrew} size="lg" variant="outline" disabled={isCapturing}>
                                 <Download className="mr-2 h-4 w-4" />
                                 {isCapturing ? 'Saving...' : 'Save Crew'}
                             </Button>
+                             <Button onClick={handlePlayAgain} size="lg">
+                                <RotateCw className="mr-2 h-4 w-4" />
+                                Assemble a New Crew
+                            </Button>
                         </div>
                     </div>
-                )}
+                </div>
             </CardContent>
          </Card>
       )}
@@ -694,3 +699,5 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     </div>
   );
 }
+
+    
