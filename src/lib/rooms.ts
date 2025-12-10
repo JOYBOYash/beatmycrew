@@ -42,21 +42,20 @@ export interface Player {
 }
 
 export interface DraftPick {
-    id: string;
-    playerId: string;
-    role: string;
-    characterName: string;
-    characterDescription: string;
-    characterImageUrl: string;
+  id: string;
+  playerId: string;
+  role: string;
+  characterName: string;
+  characterDescription: string;
+  characterImageUrl: string;
 }
 
 export interface Vote {
-    id: string;
-    voterId: string;
-    targetPlayerId: string;
-    score: number;
+  id: string;
+  voterId: string;
+  targetPlayerId: string;
+  score: number;
 }
-
 
 /**
  * Creates a new room in Firestore.
@@ -64,7 +63,10 @@ export interface Vote {
  * @param displayName The display name of the host.
  * @returns The 5-character room ID.
  */
-export async function createRoom(hostId: string, displayName?: string): Promise<string> {
+export async function createRoom(
+  hostId: string,
+  displayName?: string
+): Promise<string> {
   const roomId = Math.random().toString(36).substring(2, 7).toUpperCase();
   const roomRef = doc(db, 'rooms', roomId);
   const roomData: Room = {
@@ -85,7 +87,7 @@ export async function createRoom(hostId: string, displayName?: string): Promise<
     const batch = writeBatch(db);
     batch.set(roomRef, roomData);
     batch.set(playerRef, playerData);
-    await batch.commit()
+    await batch.commit();
   } catch (err) {
     const permissionError = new FirestorePermissionError({
       path: roomRef.path,
@@ -96,14 +98,12 @@ export async function createRoom(hostId: string, displayName?: string): Promise<
     throw err;
   }
 
-
   return roomId;
 }
 
 function generateFunnyName() {
-    return faker.person.firstName() + " " + faker.animal.type();
+  return faker.person.firstName() + ' ' + faker.animal.type();
 }
-
 
 /**
  * Adds a player to a room in Firestore.
@@ -111,7 +111,11 @@ function generateFunnyName() {
  * @param user The user object of the player joining.
  * @param displayName The optional display name for the player.
  */
-export async function addPlayerToRoom(roomId: string, user: User, displayName?: string) {
+export async function addPlayerToRoom(
+  roomId: string,
+  user: User,
+  displayName?: string
+) {
   if (!user) return;
   const playerRef = doc(db, `rooms/${roomId}/players`, user.uid);
   const playerData: Player = {
@@ -136,7 +140,11 @@ export async function addPlayerToRoom(roomId: string, user: User, displayName?: 
  * @param user The user object.
  * @param displayName The optional display name for the player.
  */
-export async function joinRoom(roomId: string, user: User, displayName?: string) {
+export async function joinRoom(
+  roomId: string,
+  user: User,
+  displayName?: string
+) {
   const roomRef = doc(db, 'rooms', roomId);
   const roomSnap = await getDoc(roomRef);
 
@@ -149,9 +157,9 @@ export async function joinRoom(roomId: string, user: User, displayName?: string)
 
   if (playersSnap.size >= roomData.playerCount) {
     // Allow re-joining if already in the player list
-    const playerIds = playersSnap.docs.map(d => d.id);
+    const playerIds = playersSnap.docs.map((d) => d.id);
     if (!playerIds.includes(user.uid)) {
-        throw new Error('Room is full');
+      throw new Error('Room is full');
     }
   }
 
@@ -164,12 +172,12 @@ export async function joinRoom(roomId: string, user: User, displayName?: string)
  */
 export async function startGame(roomId: string, players: Player[]) {
   const roomRef = doc(db, 'rooms', roomId);
-  const turnOrder = players.map(p => p.id).sort(() => Math.random() - 0.5);
+  const turnOrder = players.map((p) => p.id).sort(() => Math.random() - 0.5);
 
-  await updateDoc(roomRef, { 
+  await updateDoc(roomRef, {
     status: 'drafting',
     turnOrder: turnOrder,
-    currentPlayerId: turnOrder[0] // Start with the first player
+    currentPlayerId: turnOrder[0], // Start with the first player
   }).catch((err) => {
     const permissionError = new FirestorePermissionError({
       path: roomRef.path,
@@ -182,100 +190,103 @@ export async function startGame(roomId: string, players: Player[]) {
 }
 
 export async function selectCharacterForPlayer(
-    roomId: string, 
-    playerId: string, 
-    role: string, 
-    characterName: string, 
-    characterDescription: string,
-    characterImageUrl: string, 
-    turnOrder: string[],
-    playerCount: number
+  roomId: string,
+  playerId: string,
+  role: string,
+  characterName: string,
+  characterDescription: string,
+  characterImageUrl: string,
+  turnOrder: string[],
+  playerCount: number
 ) {
-    const draftPickRef = doc(collection(db, `rooms/${roomId}/draftPicks`));
-    
-    const draftPickData = {
-        playerId,
-        role,
-        characterName,
-        characterDescription,
-        characterImageUrl
-    };
+  const draftPickRef = doc(collection(db, `rooms/${roomId}/draftPicks`));
 
-    const batch = writeBatch(db);
-    batch.set(draftPickRef, draftPickData);
+  const draftPickData = {
+    playerId,
+    role,
+    characterName,
+    characterDescription,
+    characterImageUrl,
+  };
 
-    const roomRef = doc(db, 'rooms', roomId);
-    
-    const draftPicksCollection = collection(db, `rooms/${roomId}/draftPicks`);
-    const draftPicksSnapshot = await getDocs(draftPicksCollection);
-    const totalPicks = (draftPicksSnapshot.size || 0) + 1; // +1 for the current pick
-    const totalSlots = playerCount * 8; // 8 roles per player
+  const batch = writeBatch(db);
+  batch.set(draftPickRef, draftPickData);
 
-    if (totalPicks >= totalSlots) {
-       const finalStatus = playerCount === 1 ? 'finished' : 'voting';
-       batch.update(roomRef, { status: finalStatus, currentPlayerId: null });
-    } else {
-        const currentIndex = turnOrder.indexOf(playerId);
-        const nextPlayerIndex = (currentIndex + 1) % turnOrder.length;
-        const nextPlayerId = turnOrder[nextPlayerIndex];
-        batch.update(roomRef, { currentPlayerId: nextPlayerId });
-    }
+  const roomRef = doc(db, 'rooms', roomId);
 
+  const draftPicksCollection = collection(db, `rooms/${roomId}/draftPicks`);
+  const draftPicksSnapshot = await getDocs(draftPicksCollection);
+  const totalPicks = (draftPicksSnapshot.size || 0) + 1; // +1 for the current pick
+  const totalSlots = playerCount * 8; // 8 roles per player
 
-    await batch.commit().catch((err) => {
-        const permissionError = new FirestorePermissionError({
-            path: `rooms/${roomId}/draftPicks`,
-            operation: 'create',
-            requestResourceData: draftPickData
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        throw err;
+  if (totalPicks >= totalSlots) {
+    const finalStatus = playerCount === 1 ? 'finished' : 'voting';
+    batch.update(roomRef, { status: finalStatus, currentPlayerId: null });
+  } else {
+    const currentIndex = turnOrder.indexOf(playerId);
+    const nextPlayerIndex = (currentIndex + 1) % turnOrder.length;
+    const nextPlayerId = turnOrder[nextPlayerIndex];
+    batch.update(roomRef, { currentPlayerId: nextPlayerId });
+  }
+
+  await batch.commit().catch((err) => {
+    const permissionError = new FirestorePermissionError({
+      path: `rooms/${roomId}/draftPicks`,
+      operation: 'create',
+      requestResourceData: draftPickData,
     });
+    errorEmitter.emit('permission-error', permissionError);
+    throw err;
+  });
 }
 
+export async function submitVotes(
+  roomId: string,
+  votes: Omit<Vote, 'id'>[],
+  playerCount: number,
+  existingVotes: Vote[]
+) {
+  const batch = writeBatch(db);
+  const votesCollectionRef = collection(db, `rooms/${roomId}/votes`);
 
-export async function submitVotes(roomId: string, votes: Omit<Vote, 'id'>[], playerCount: number, existingVotes: Vote[]) {
-    const batch = writeBatch(db);
-    const votesCollectionRef = collection(db, `rooms/${roomId}/votes`);
-    
-    votes.forEach(vote => {
-        const voteRef = doc(votesCollectionRef);
-        batch.set(voteRef, vote);
+  votes.forEach((vote) => {
+    const voteRef = doc(votesCollectionRef);
+    batch.set(voteRef, vote);
+  });
+
+  const roomRef = doc(db, 'rooms', roomId);
+
+  const roomVotes = existingVotes.filter(v => v.id.startsWith(roomId));
+
+  // Multiplayer mode: Check if all players have voted
+  const totalVotesExpected =
+    playerCount * (playerCount > 1 ? playerCount - 1 : 1);
+  const currentVotes = (roomVotes.length || 0) + votes.length;
+
+  if (currentVotes >= totalVotesExpected) {
+    batch.update(roomRef, { status: 'finished' });
+  }
+
+  await batch.commit().catch((err) => {
+    const permissionError = new FirestorePermissionError({
+      path: `rooms/${roomId}/votes`,
+      operation: 'create',
+      requestResourceData: votes,
     });
-
-    const roomRef = doc(db, 'rooms', roomId);
-    
-    const roomVotes = existingVotes.filter(v => v.id.startsWith(roomId));
-
-    // Multiplayer mode: Check if all players have voted
-    const totalVotesExpected = playerCount * (playerCount > 1 ? (playerCount - 1) : 1);
-    const currentVotes = (roomVotes.length || 0) + votes.length;
-    
-    if (currentVotes >= totalVotesExpected) {
-        batch.update(roomRef, { status: 'finished' });
-    }
-
-    await batch.commit().catch((err) => {
-        const permissionError = new FirestorePermissionError({
-            path: `rooms/${roomId}/votes`,
-            operation: 'create',
-            requestResourceData: votes
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        throw err;
-    });
+    errorEmitter.emit('permission-error', permissionError);
+    throw err;
+  });
 }
-
 
 export async function setPlayerCount(roomId: string, count: number) {
-    const roomRef = doc(db, 'rooms', roomId);
-    await updateDoc(roomRef, { playerCount: count }).catch((err) => {
-        const permissionError = new FirestorePermissionError({
-            path: roomRef.path,
-            operation: 'update',
-            requestResourceData: { playerCount: count },
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        throw err;
+  const roomRef = doc(db, 'rooms', roomId);
+  await updateDoc(roomRef, { playerCount: count }).catch((err) => {
+    const permissionError = new FirestorePermissionError({
+      path: roomRef.path,
+      operation: 'update',
+      requestResourceData: { playerCount: count },
     });
+    errorEmitter.emit('permission-error', permissionError);
+    throw err;
+  });
 }
