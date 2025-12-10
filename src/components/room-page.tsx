@@ -28,6 +28,7 @@ import {
   ChefHat,
   Stethoscope,
   Hammer,
+  Shuffle,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -38,8 +39,10 @@ import {
   DraftPick,
   Player,
   Room,
+  randomizeCrew,
   selectCharacterForPlayer,
   submitVotes,
+  swapCharacterRoles,
   Vote,
 } from '@/lib/rooms';
 
@@ -60,6 +63,7 @@ export type DraftedCharacterState = {
   id: string; // This should be the draftPick document ID
   info: Character;
   imageUrl: string;
+  role: Role;
 };
 
 type CrewWithDataUri = Record<
@@ -86,6 +90,7 @@ const WantedPosterCard = ({
   character,
   onImageError,
   hasError,
+  ...props
 }: {
   character: DraftedCharacterState;
   onImageError: () => void;
@@ -96,7 +101,10 @@ const WantedPosterCard = ({
   const showFallback = isApiFallback || hasError;
 
   return (
-    <div className="w-full h-full bg-[url(/card_bg.png)] bg-cover bg-center p-2 flex flex-col items-center gap-1 shadow-lg relative group">
+    <div
+      className="w-full h-full bg-[url(/card_bg.png)] bg-cover bg-center p-2 flex flex-col items-center gap-1 shadow-lg relative group"
+      {...props}
+    >
       <h3 className="font-headline font-black text-lg tracking-wider text-card-foreground/80">
         WANTED
       </h3>
@@ -180,14 +188,18 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   const isMobile = useIsMobile();
   const [mobileCharSelected, setMobileCharSelected] = useState(false);
 
-  const { data: room } = useDocument<Room>(`rooms/${roomId}`);
-  const { data: players } = useCollection<Player>(`rooms/${roomId}/players`);
-  const { data: draftPicks } = useCollection<DraftPick>(
+  const { data: room, isLoading: isRoomLoading } = useDocument<Room>(`rooms/${roomId}`);
+  const { data: players, isLoading: arePlayersLoading } = useCollection<Player>(
+    `rooms/${roomId}/players`
+  );
+  const { data: draftPicks, isLoading: areDraftPicksLoading } = useCollection<DraftPick>(
     `rooms/${roomId}/draftPicks`
   );
   const { data: votes } = useCollection<Vote>('votes', {
     isCollectionGroup: true,
   });
+
+  const isLoading = isRoomLoading || arePlayersLoading || areDraftPicksLoading;
 
   const isMyTurn = room?.currentPlayerId === user?.uid;
   const isSinglePlayer = room?.playerCount === 1;
@@ -216,6 +228,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
             imageHint: pick.characterName,
           },
           imageUrl: pick.characterImageUrl,
+          role: pick.role as Role,
         };
       }
     });
@@ -250,9 +263,13 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     } else if (allCrewsFull && room?.status === 'drafting') {
       if (!isSinglePlayer) {
         setPhase('voting');
+      } else {
+        // For single player, go straight to result after drafting
+        setPhase('result');
       }
     }
   }, [allCrewsFull, room, isSinglePlayer]);
+
 
   const initializePool = async () => {
     const fetchedChars = await fetchAllCharacters();
@@ -279,7 +296,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
     const imageUrl = await getCharImage(character.name);
 
-    setDraftedCharacter({ id: 'new-draft', info: character, imageUrl });
+    setDraftedCharacter({ id: 'new-draft', info: character, imageUrl, role: 'Captain' /* placeholder */ });
   };
 
   const handleDraft = () => {
@@ -337,7 +354,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       });
     }
 
-    if (votesToSubmit.length === 0) {
+    if (votesToSubmit.length === 0 && !isSinglePlayer) {
       toast({
         title: 'No ratings submitted.',
         description: 'Please rate at least one crew.',
@@ -462,6 +479,71 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       return;
     assignCharacterToRole(role);
   };
+  
+  const handleRandomizeCrew = async () => {
+      if (!isSinglePlayer || !user) return;
+      const crewCharacters = Object.values(myCrew || {}).filter(Boolean).map(m => m!.info.name);
+      
+      const availablePool = await Promise.all(
+        characterPool
+          .filter(c => !crewCharacters.includes(c.name))
+          .map(async c => ({ ...c, imageUrl: await getCharImage(c.name) }))
+      );
+
+      await randomizeCrew(roomId, user.uid, availablePool, myCrew || {});
+  }
+
+  // --- Drag and Drop Logic ---
+  const handleDragStart = (e: React.DragEvent, character: DraftedCharacterState) => {
+    if (character.playerId !== user?.uid) {
+        e.preventDefault();
+        return;
+    }
+    e.dataTransfer.setData('application/json', JSON.stringify(character));
+    e.currentTarget.classList.add('opacity-50');
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.currentTarget.classList.add('bg-accent/20');
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.currentTarget.classList.remove('bg-accent/20');
+  };
+  
+  const handleDrop = (e: React.DragEvent, targetRole: Role) => {
+    e.preventDefault();
+    e.currentTarget.classList.remove('bg-accent/20');
+    e.currentTarget.closest('[draggable]')?.classList.remove('opacity-50');
+    
+    const draggedCharString = e.dataTransfer.getData('application/json');
+    if (!draggedCharString || !myCrew) return;
+    
+    const draggedChar: DraftedCharacterState = JSON.parse(draggedCharString);
+
+    // Don't do anything if dropping on the same role
+    if(draggedChar.role === targetRole) return;
+    
+    const targetChar = myCrew[targetRole];
+
+    // If dropping on an empty slot, it's an assignment, not a swap.
+    if (!targetChar) {
+        if (draggedChar.id === 'new-draft' && draftedCharacter) {
+             assignCharacterToRole(targetRole);
+        }
+        return;
+    }
+
+    // Perform the swap
+    swapCharacterRoles(roomId, draggedChar.id, draggedChar.role, targetChar.id, targetChar.role);
+  };
+  
+  const handleDragEnd = (e: React.DragEvent) => {
+    e.currentTarget.classList.remove('opacity-50');
+  }
+
 
   const renderCrewMemberSlot = (
     crewMember: DraftedCharacterState | null,
@@ -470,6 +552,8 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   ) => {
     const isAssignable = !crewMember && draftedCharacter && isMyTurn;
     const isMobileAssignable = isMobile && isAssignable;
+    
+    const isOwner = crewMember?.playerId === user?.uid;
 
     const slotContent = (
       <>
@@ -502,13 +586,20 @@ export default function RoomPage({ roomId }: { roomId: string }) {
             ? handleMobileSlotClick(role)
             : isAssignable && assignCharacterToRole(role))
         }
+        onDragOver={isOwner ? handleDragOver : undefined}
+        onDragLeave={isOwner ? handleDragLeave : undefined}
+        onDrop={(e) => isOwner ? handleDrop(e, role) : undefined}
       >
         <div
+          draggable={isOwner && !!crewMember}
+          onDragStart={(e) => crewMember && isOwner && handleDragStart(e, crewMember)}
+          onDragEnd={handleDragEnd}
           className={cn('w-full h-48 md:h-56 relative transition-all duration-200', {
             'ring-2 ring-accent ring-offset-2 ring-offset-background rounded-lg':
               isMobileAssignable && mobileCharSelected,
             'hover:scale-105 hover:shadow-lg hover:ring-2 hover:ring-accent':
               isAssignable && !isMobile,
+             'cursor-grab active:cursor-grabbing': isOwner && crewMember
           })}
         >
           {slotContent}
@@ -521,7 +612,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     );
   };
 
-  if (!room || !user || !myCrew) {
+  if (isLoading || !user || !myCrew) {
     return (
       <div className="flex items-center justify-center h-screen text-white text-xl">
         Loading your crew...
@@ -551,6 +642,13 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 draftedCharacter && isMyTurn && isMobile && 'cursor-pointer'
               )}
               onClick={handleMobileDraftedCharClick}
+              onDrop={(e) => {
+                 const draggedCharString = e.dataTransfer.getData('application/json');
+                 if(draggedCharString) {
+                    setDraftedCharacter(JSON.parse(draggedCharString));
+                 }
+              }}
+              onDragOver={handleDragOver}
             >
               {draftedCharacter ? (
                 <div
@@ -558,6 +656,8 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                     'ring-2 ring-accent ring-offset-2 ring-offset-background rounded-lg':
                       mobileCharSelected,
                   })}
+                  draggable={isMyTurn}
+                   onDragStart={(e) => handleDragStart(e, {...draftedCharacter, id: "new-draft", playerId: user.uid, role: 'Captain' /* placeholder */})}
                 >
                   <WantedPosterCard
                     character={draftedCharacter}
@@ -591,6 +691,12 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                   <Dices className="mr-2 h-4 w-4" />
                   Re-roll
                 </Button>
+                {isSinglePlayer && (
+                    <Button variant="outline" size="sm" onClick={handleRandomizeCrew}>
+                        <Shuffle className="mr-2 h-4 w-4" />
+                        Randomize Crew
+                    </Button>
+                )}
               </div>
             </div>
           </div>
@@ -620,113 +726,146 @@ export default function RoomPage({ roomId }: { roomId: string }) {
         </div>
       )}
 
-      {(phase === 'voting' || (phase === 'result' && isSinglePlayer)) && (
+      {(phase === 'voting' || phase === 'result') && (
         <div className="w-full h-full flex flex-col items-center justify-center p-4">
           <div className="w-full h-full animate-map-open bg-black/30 backdrop-blur-sm border-white/20 rounded-lg p-4 md:p-8 overflow-y-auto">
             <div className="text-center mb-8">
               <h1 className="text-3xl md:text-5xl font-headline text-white [text-shadow:_0_1px_10px_rgb(0_0_0_/_50%)]">
-                {isSinglePlayer ? 'Your Assembled Crew' : 'Rate Their Crews!'}
+                {phase === 'voting' ? 'Rate Their Crews!' : isSinglePlayer ? 'Your Assembled Crew' : 'Final Standings'}
               </h1>
               <p className="text-white/70 mt-2">
-                {isSinglePlayer
-                  ? "You've assembled your crew! Save it or try again."
-                  : 'Vote on which crew you think is the strongest.'}
+                {phase === 'voting' ? 'Vote on which crew you think is the strongest.' : isSinglePlayer ? "You've assembled your crew! Save it or try again." : "The results are in! Here's how the crews stacked up."}
               </p>
             </div>
 
-            <div className="space-y-8">
-              {(isSinglePlayer
-                ? [players.find((p) => p.id === user.id)]
-                : otherPlayers
-              )
-                .filter(Boolean)
-                .map((player) => (
-                  <div
-                    key={player!.id}
-                    className="p-4 rounded-lg bg-black/20 border border-white/10"
-                  >
-                    <h3 className="font-headline text-2xl mb-4 text-white/90">
-                      {`${player!.displayName}'s Crew`}
-                    </h3>
-                    <div className="grid grid-cols-4 md:grid-cols-8 gap-4 mb-6">
-                      {ROLES.map((role) => {
-                        const crewMember = playerCrews[player!.id]?.[role];
-                        return (
-                          <div
-                            key={role}
-                            className="flex flex-col items-center gap-1 text-center"
-                          >
-                            <div className="w-[80px] h-[140px] relative">
-                              {crewMember ? (
-                                <div className="w-full h-full bg-[url(/card_bg.png)] bg-cover bg-center p-1 flex flex-col items-center gap-0.5 shadow-lg relative text-center">
-                                  <h3 className="font-headline font-black text-xs tracking-wider text-card-foreground/80">
-                                    WANTED
-                                  </h3>
-                                  <div className="w-full h-32 relative mt-0.5 rounded-sm overflow-hidden border-2 border-yellow-800/20">
-                                    <Image
-                                      src={
-                                        imageErrors[crewMember.info.name]
-                                          ? '/bmc_logo.png'
-                                          : crewMember.imageUrl
-                                      }
-                                      alt={crewMember.info.name}
-                                      fill
-                                      className="object-cover object-top"
-                                      sizes="80px"
-                                      onError={() =>
-                                        handleImageError(crewMember.info.name)
-                                      }
-                                    />
-                                  </div>
-                                  <p className="font-headline text-xs text-card-foreground/70">
-                                    DEAD OR ALIVE
-                                  </p>
-                                  <p className="font-headline font-bold text-sm leading-tight truncate w-full">
-                                    {crewMember.info.name}
-                                  </p>
-                                </div>
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-black/20 border-2 border-dashed border-white/20 p-2 text-white/40 text-xl font-bold">
-                                  ?
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1.5 text-white/70 -mt-1">
-                              {React.createElement(roleIcons[role], {
-                                className: 'w-2 h-2',
-                              })}
-                              <span className="font-semibold text-[10px]">
-                                {role}
+            {phase === 'voting' && (
+               <div className="space-y-8">
+               {otherPlayers.map((player) => (
+                   <div
+                     key={player!.id}
+                     className="p-4 rounded-lg bg-black/20 border border-white/10"
+                   >
+                     <h3 className="font-headline text-2xl mb-4 text-white/90">
+                       {`${player!.displayName}'s Crew`}
+                     </h3>
+                     <div className="grid grid-cols-4 md:grid-cols-8 gap-4 mb-6">
+                       {ROLES.map((role) => {
+                         const crewMember = playerCrews[player!.id]?.[role];
+                         return (
+                           <div
+                             key={role}
+                             className="flex flex-col items-center gap-1 text-center"
+                           >
+                             <div className="w-[80px] h-[140px] relative">
+                               {crewMember ? (
+                                  <WantedPosterCard character={crewMember} onImageError={() => handleImageError(crewMember.info.name)} hasError={imageErrors[crewMember.info.name]}/>
+                               ) : (
+                                 <div className="w-full h-full flex items-center justify-center bg-black/20 border-2 border-dashed border-white/20 p-2 text-white/40 text-xl font-bold">
+                                   ?
+                                 </div>
+                               )}
+                             </div>
+                             <div className="flex items-center gap-1.5 text-white/70 -mt-1">
+                               {React.createElement(roleIcons[role], {
+                                 className: 'w-2 h-2',
+                               })}
+                               <span className="font-semibold text-[10px]">
+                                 {role}
+                               </span>
+                             </div>
+                           </div>
+                         );
+                       })}
+                     </div>
+                     <div className="flex items-center gap-4 max-w-md mx-auto">
+                       <span className="text-white font-bold">1</span>
+                       <Slider
+                         defaultValue={[5]}
+                         min={1}
+                         max={10}
+                         step={1}
+                         onValueChange={([value]) =>
+                           setPlayerRatings((prev) => ({
+                             ...prev,
+                             [player!.id]: value,
+                           }))
+                         }
+                       />
+                       <span className="text-white font-bold">10</span>
+                     </div>
+                   </div>
+                 ))}
+             </div>
+            )}
+
+            {phase === 'result' && (
+                <div className="space-y-6">
+                  {sortedPlayers.map((player, index) => (
+                      <div
+                        key={player.id}
+                        className="p-4 rounded-lg bg-black/20 border border-white/10 flex flex-col md:flex-row gap-6 items-center"
+                      >
+                         {!isSinglePlayer && (
+                            <div className="flex items-center gap-4">
+                              <span className="text-4xl font-bold font-headline text-yellow-500 w-12 text-center">
+                                #{index + 1}
                               </span>
+                              <div className="text-center border-r pr-4 border-yellow-800/30">
+                                <p className="text-5xl font-bold font-headline text-white">
+                                  {(finalScores[player.id]?.avg ?? 0).toFixed(1)}
+                                </p>
+                                <p className="text-sm text-white/60">Avg. Score</p>
+                              </div>
                             </div>
+                        )}
+                        <div className="flex-1">
+                          <h3 className="text-xl font-headline mb-4 text-white/90">
+                            {player.displayName}'s Crew {player.id === user.id && '(You)'}
+                          </h3>
+                          <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
+                            {ROLES.map((role) => {
+                              const crewMember = playerCrews[player.id]?.[role] || null;
+                              return (
+                                <div
+                                  key={role}
+                                  className="flex flex-col items-center gap-1 text-center"
+                                >
+                                  <div className="w-[80px] h-[140px] relative">
+                                    {crewMember ? (
+                                       <WantedPosterCard character={crewMember} onImageError={() => handleImageError(crewMember.info.name)} hasError={imageErrors[crewMember.info.name]}/>
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center bg-black/20 border-2 border-dashed border-white/20 p-2 text-white/40 text-xl font-bold">
+                                        ?
+                                      </div>
+                                    )}
+                                  </div>
+                                   <div className="flex items-center gap-1.5 text-white/70 -mt-1">
+                                        {React.createElement(roleIcons[role], {
+                                        className: 'w-2 h-2',
+                                        })}
+                                        <span className="font-semibold text-[10px]">
+                                        {role}
+                                        </span>
+                                    </div>
+                                </div>
+                              );
+                            })}
                           </div>
-                        );
-                      })}
-                    </div>
-                    {!isSinglePlayer && (
-                      <div className="flex items-center gap-4 max-w-md mx-auto">
-                        <span className="text-white font-bold">1</span>
-                        <Slider
-                          defaultValue={[5]}
-                          min={1}
-                          max={10}
-                          step={1}
-                          onValueChange={([value]) =>
-                            setPlayerRatings((prev) => ({
-                              ...prev,
-                              [player!.id]: value,
-                            }))
-                          }
-                        />
-                        <span className="text-white font-bold">10</span>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                ))}
-            </div>
+                    )
+                  )}
+                </div>
+            )}
+            
             <div className="text-center mt-8 flex justify-center gap-4">
-              {isSinglePlayer ? (
-                <>
+              {phase === 'voting' && (
+                <Button onClick={handleSubmitVotes} size="lg">
+                  Submit Votes
+                </Button>
+              )}
+              {phase === 'result' && (
+                 <>
                   <Button onClick={handleSaveCrew} disabled={isSaving}>
                     <Download className="mr-2 h-4 w-4" />
                     {isSaving ? 'Saving...' : 'Save My Crew'}
@@ -736,124 +875,9 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                     Play Again
                   </Button>
                 </>
-              ) : (
-                <Button onClick={handleSubmitVotes} size="lg">
-                  Submit Votes
-                </Button>
               )}
             </div>
-          </div>
-        </div>
-      )}
 
-      {phase === 'result' && !isSinglePlayer && (
-        <div className="w-full h-full flex flex-col items-center justify-center p-4">
-          <div className="w-full h-full animate-map-open bg-black/30 backdrop-blur-sm border-white/20 rounded-lg p-4 md:p-8 overflow-y-auto">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl md:text-5xl font-headline text-white [text-shadow:_0_1px_10px_rgb(0_0_0_/_50%)]">
-                Final Standings
-              </h1>
-              <p className="text-white/70 mt-2">
-                The results are in! Here's how the crews stacked up.
-              </p>
-            </div>
-            <div className="space-y-6">
-              {sortedPlayers.map((player, index) => {
-                return (
-                  <div
-                    key={player.id}
-                    className="p-4 rounded-lg bg-black/20 border border-white/10 flex flex-col md:flex-row gap-6 items-center"
-                  >
-                    <div className="flex items-center gap-4">
-                      {!isSinglePlayer && (
-                        <>
-                          <span className="text-4xl font-bold font-headline text-yellow-500 w-12 text-center">
-                            #{index + 1}
-                          </span>
-                          <div className="text-center border-r pr-4 border-yellow-800/30">
-                            <p className="text-5xl font-bold font-headline text-white">
-                              {(finalScores[player.id]?.avg ?? 0).toFixed(1)}
-                            </p>
-                            <p className="text-sm text-white/60">Avg. Score</p>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-headline mb-4 text-white/90">
-                        {player.displayName}'s Crew
-                      </h3>
-                      <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
-                        {ROLES.map((role) => {
-                          const crewMember =
-                            playerCrews[player.id]?.[role] || null;
-                          return (
-                            <div
-                              key={role}
-                              className="flex flex-col items-center gap-1 text-center"
-                            >
-                              <div className="w-[80px] h-[140px] relative">
-                                {crewMember ? (
-                                  <div className="w-full h-full bg-[url(/card_bg.png)] bg-cover bg-center p-1 flex flex-col items-center gap-0.5 shadow-lg relative text-center">
-                                    <h3 className="font-headline font-black text-xs tracking-wider text-card-foreground/80">
-                                      WANTED
-                                    </h3>
-                                    <div className="w-full h-32 relative mt-0.5 rounded-sm overflow-hidden border-2 border-yellow-800/20">
-                                      <Image
-                                        src={
-                                          imageErrors[crewMember.info.name]
-                                            ? '/bmc_logo.png'
-                                            : crewMember.imageUrl
-                                        }
-                                        alt={crewMember.info.name}
-                                        fill
-                                        className="object-cover object-top"
-                                        sizes="80px"
-                                        onError={() =>
-                                          handleImageError(crewMember.info.name)
-                                        }
-                                      />
-                                    </div>
-                                    <p className="font-headline text-xs text-card-foreground/70">
-                                      DEAD OR ALIVE
-                                    </p>
-                                    <p className="font-headline font-bold text-sm leading-tight truncate w-full">
-                                      {crewMember.info.name}
-                                    </p>
-                                  </div>
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center bg-black/20 border-2 border-dashed border-white/20 p-2 text-white/40 text-xl font-bold">
-                                    ?
-                                  </div>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1.5 text-white/70 -mt-1">
-                                {React.createElement(roleIcons[role], {
-                                  className: 'w-2 h-2',
-                                })}
-                                <span className="font-semibold text-[10px]">
-                                  {role}
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="mt-8 flex justify-center gap-4">
-              <Button onClick={handleSaveCrew} disabled={isSaving}>
-                <Download className="mr-2 h-4 w-4" />
-                {isSaving ? 'Saving...' : 'Save My Crew'}
-              </Button>
-              <Button variant="secondary" onClick={handlePlayAgain}>
-                <RotateCw className="mr-2 h-4 w-4" />
-                Play Again
-              </Button>
-            </div>
           </div>
         </div>
       )}

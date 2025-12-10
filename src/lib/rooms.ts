@@ -21,6 +21,7 @@ import { User } from 'firebase/auth';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { faker } from '@faker-js/faker';
+import { type Role, type Character, ROLES } from './characters';
 
 // Initialize Firebase
 const app = getApps().length ? getApp() : initializeApp(getFirebaseConfig());
@@ -238,6 +239,75 @@ export async function selectCharacterForPlayer(
     errorEmitter.emit('permission-error', permissionError);
     throw err;
   });
+}
+
+export async function swapCharacterRoles(
+  roomId: string,
+  pick1Id: string,
+  pick1Role: Role,
+  pick2Id: string,
+  pick2Role: Role
+) {
+    const batch = writeBatch(db);
+    
+    const pick1Ref = doc(db, `rooms/${roomId}/draftPicks`, pick1Id);
+    batch.update(pick1Ref, { role: pick2Role });
+
+    const pick2Ref = doc(db, `rooms/${roomId}/draftPicks`, pick2Id);
+    batch.update(pick2Ref, { role: pick1Role });
+
+    await batch.commit().catch((err) => {
+        const permissionError = new FirestorePermissionError({
+            path: `rooms/${roomId}/draftPicks`,
+            operation: 'update',
+            requestResourceData: { swap: [pick1Id, pick2Id] },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw err;
+    });
+}
+
+
+export async function randomizeCrew(
+  roomId: string,
+  playerId: string,
+  characterPool: (Character & {imageUrl: string})[],
+  currentCrew: Partial<Record<Role, DraftPick>>
+) {
+    const batch = writeBatch(db);
+    const availableRoles = ROLES.filter(role => !currentCrew[role]);
+    const availableCharacters = [...characterPool];
+    
+    availableRoles.forEach(role => {
+        if (availableCharacters.length === 0) return;
+
+        const charIndex = Math.floor(Math.random() * availableCharacters.length);
+        const character = availableCharacters.splice(charIndex, 1)[0];
+
+        const draftPickRef = doc(collection(db, `rooms/${roomId}/draftPicks`));
+        const draftPickData = {
+            playerId,
+            role,
+            characterName: character.name,
+            characterDescription: character.description,
+            characterImageUrl: character.imageUrl,
+        };
+        batch.set(draftPickRef, draftPickData);
+    });
+
+    // Since this fills the crew, end the drafting phase
+    const roomRef = doc(db, 'rooms', roomId);
+    batch.update(roomRef, { status: 'finished', currentPlayerId: null });
+
+    await batch.commit().catch((err) => {
+        const permissionError = new FirestorePermissionError({
+            path: `rooms/${roomId}/draftPicks`,
+            operation: 'create',
+            requestResourceData: { action: "randomize" },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw err;
+    });
 }
 
 export async function submitVotes(

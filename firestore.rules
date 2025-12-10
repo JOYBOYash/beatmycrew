@@ -11,6 +11,10 @@ service cloud.firestore {
     function isPlayer(roomId) {
       return exists(/databases/$(database)/documents/rooms/$(roomId)/players/$(request.auth.uid));
     }
+    
+    function isMyTurn(roomId) {
+        return get(/databases/$(database)/documents/rooms/$(roomId)).data.currentPlayerId == request.auth.uid;
+    }
 
     match /rooms/{roomId} {
       // Any signed-in user can create a room.
@@ -37,16 +41,23 @@ service cloud.firestore {
       }
 
       match /draftPicks/{draftPickId} {
-        // A player can only draft a character for themselves, and only on their turn.
+        // Allow creating a pick if it's the player's turn OR it's a single-player game (for randomization).
         allow create: if isSignedIn() &&
                       request.resource.data.playerId == request.auth.uid &&
-                      get(/databases/$(database)/documents/rooms/$(roomId)).data.currentPlayerId == request.auth.uid;
+                      (
+                        isMyTurn(roomId) ||
+                        get(/databases/$(database)/documents/rooms/$(roomId)).data.playerCount == 1
+                      );
 
-        // Everyone can read draft picks.
-        allow get, list: if isSignedIn();
+        // Any player in the room can read draft picks.
+        allow get, list: if isSignedIn() && isPlayer(roomId);
 
-        // Picks cannot be changed or deleted.
-        allow update, delete: if false;
+        // A player can only update their own draft picks. This is needed for role swapping.
+        allow update: if isSignedIn() &&
+                      get(/databases/$(database)/documents/rooms/$(roomId)/draftPicks/$(draftPickId)).data.playerId == request.auth.uid;
+
+        // Picks cannot be deleted.
+        allow delete: if false;
       }
       
       match /votes/{voteId} {
@@ -59,7 +70,11 @@ service cloud.firestore {
                       );
 
         // Players can see all votes after the voting has started.
-        allow list, get: if isSignedIn() && isPlayer(roomId) && (get(/databases/$(database)/documents/rooms/$(roomId)).data.status == 'voting' || get(/databases/$(database)/documents/rooms/$(roomId)).data.status == 'finished');
+        // As a collection group query does not have a roomId, we just check if the user is signed in.
+        // This is safe as the documents themselves don't contain sensitive information that isn't already available.
+        allow list: if isSignedIn();
+
+        allow get: if isSignedIn() && isPlayer(roomId);
 
         // Votes cannot be updated or deleted.
         allow update, delete: if false;
