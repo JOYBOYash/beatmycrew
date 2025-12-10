@@ -24,7 +24,7 @@ service cloud.firestore {
 
       match /players/{playerId} {
         allow create: if isSignedIn() && request.auth.uid == playerId;
-        allow list, get: if isSignedIn() && isPlayer(roomId);
+        allow list, get: if isSignedIn();
         allow update, delete: if false;
       }
 
