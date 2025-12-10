@@ -2,7 +2,7 @@
 'use client';
 
 import React from 'react';
-import { Home, Ship } from 'lucide-react';
+import { Home, Ship, Swords } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from './ui/button';
@@ -12,27 +12,27 @@ import { Separator } from './ui/separator';
 
 const navItems = [
     { href: '/', label: 'Home', icon: Home },
-    { href: '/build', label: 'Create Crew', icon: Ship },
+    { href: '/build', label: 'Create Crew', icon: Swords },
 ];
 
-export default function TaskbarNav() {
+function TaskbarNav() {
     const pathname = usePathname();
 
     return (
         <footer className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
             <TooltipProvider>
-                <div className="flex items-center gap-2 h-14 p-2 bg-[url(/map_bg.jpg)] bg-cover bg-center border-2 border-yellow-800/60 rounded-xl shadow-2xl">
+                <div className="flex items-center gap-2 h-14 p-2 bg-black/30 backdrop-blur-sm border border-white/20 rounded-xl shadow-2xl">
                      {navItems.map((item, index) => (
                         <React.Fragment key={item.href}>
-                            {index > 0 && <Separator orientation="vertical" className="h-6 bg-yellow-800/40" />}
+                            {index > 0 && <Separator orientation="vertical" className="h-6 bg-white/20" />}
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
                                         variant="ghost"
                                         size="icon"
                                         className={cn(
-                                            "w-12 h-12 rounded-lg transition-all hover:bg-black/20",
-                                            pathname === item.href ? 'bg-black/30' : ''
+                                            "w-12 h-12 rounded-lg transition-all hover:bg-white/20",
+                                            pathname === item.href ? 'bg-white/20' : ''
                                         )}
                                         asChild
                                     >
@@ -52,3 +52,5 @@ export default function TaskbarNav() {
         </footer>
     );
 }
+
+export default React.memo(TaskbarNav);

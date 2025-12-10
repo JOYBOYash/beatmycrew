@@ -1,0 +1,65 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isPlayer(roomId) {
+      return exists(/databases/$(database)/documents/rooms/$(roomId)/players/$(request.auth.uid));
+    }
+    
+    function isMyTurn(roomId) {
+        return get(/databases/$(database)/documents/rooms/$(roomId)).data.currentPlayerId == request.auth.uid;
+    }
+
+    match /rooms/{roomId} {
+      allow create: if isSignedIn();
+      allow get: if isSignedIn();
+      allow update: if isSignedIn() && isPlayer(roomId);
+      allow delete: if false;
+
+      match /players/{playerId} {
+        allow create: if isSignedIn() && request.auth.uid == playerId;
+        allow list, get: if isSignedIn() && isPlayer(roomId);
+        allow update, delete: if false;
+      }
+
+      match /draftPicks/{draftPickId} {
+        allow create: if isSignedIn() &&
+                      request.resource.data.playerId == request.auth.uid &&
+                      (
+                        isMyTurn(roomId) ||
+                        get(/databases/$(database)/documents/rooms/$(roomId)).data.playerCount == 1
+                      );
+
+        allow get, list: if isSignedIn() && isPlayer(roomId);
+
+        allow update: if isSignedIn() &&
+                      get(/databases/$(database)/documents/rooms/$(roomId)/draftPicks/$(draftPickId)).data.playerId == request.auth.uid;
+
+        allow delete: if false;
+      }
+      
+      match /votes/{voteId} {
+        // Reads on the 'votes' collection group can't rely on isPlayer(roomId)
+        // as the roomId is not available in the context of a collection group query.
+        // We allow any signed-in user to read, as the vote data is not sensitive.
+        // Writes are still restricted.
+        allow get, list: if isSignedIn();
+
+        allow create: if isSignedIn() && isPlayer(roomId) &&
+                      request.resource.data.voterId == request.auth.uid &&
+                      (
+                        request.resource.data.targetPlayerId != request.auth.uid || 
+                        get(/databases/$(database)/documents/rooms/$(roomId)).data.playerCount == 1
+                      );
+                      
+        allow update, delete: if false;
+      }
+    }
+  }
+}

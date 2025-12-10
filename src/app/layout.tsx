@@ -5,6 +5,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 import VideoBackground from "@/components/video-background";
 import TaskbarNav from "@/components/taskbar-nav";
+import FirebaseClientProvider from "@/firebase/client-provider";
+import FirebaseErrorListener from "@/components/FirebaseErrorListener";
+import { UserProvider } from "@/firebase/auth/use-user";
 
 export const metadata: Metadata = {
   title: "BeatMyCrew",
@@ -31,11 +34,16 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
       </head>
-      <body className={cn("font-body antialiased min-h-screen bg-background")}>
-        <VideoBackground />
-        <div className="relative z-10 pb-24">{children}</div>
-        <TaskbarNav />
-        <Toaster />
+      <body className={cn("font-body antialiased min-h-screen")}>
+        <FirebaseClientProvider>
+          <UserProvider>
+            <VideoBackground />
+            <div className="relative z-10 pb-24">{children}</div>
+            <TaskbarNav />
+            <Toaster />
+            <FirebaseErrorListener />
+          </UserProvider>
+        </FirebaseClientProvider>
       </body>
     </html>
   );
