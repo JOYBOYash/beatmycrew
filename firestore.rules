@@ -50,8 +50,9 @@ service cloud.firestore {
                         get(/databases/$(database)/documents/rooms/$(roomId)).data.playerCount == 1
                       );
 
-        // Any player in the room can read draft picks.
-        allow get, list: if isSignedIn() && isPlayer(roomId);
+        // Any signed-in user can read draft picks. This is safe as they don't contain sensitive data
+        // and resolves a race condition on clients joining a room.
+        allow get, list: if isSignedIn();
 
         // A player can only update their own draft picks. This is needed for role swapping.
         allow update: if isSignedIn() &&
