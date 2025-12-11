@@ -70,11 +70,11 @@ service cloud.firestore {
                         get(/databases/$(database)/documents/rooms/$(roomId)).data.playerCount == 1
                       );
 
-        // Players can see all votes after the voting has started.
-        // As a collection group query does not have a roomId, we just check if the user is signed in.
-        // This is safe as the documents themselves don't contain sensitive information that isn't already available.
+        // A collection group query for 'votes' does not have a roomId, so we just check for sign-in.
+        // This is safe as vote documents don't contain sensitive info not already available.
         allow list: if isSignedIn();
 
+        // Individual vote reads still require the user to be a player in the room.
         allow get: if isSignedIn() && isPlayer(roomId);
 
         // Votes cannot be updated or deleted.
