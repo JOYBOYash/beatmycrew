@@ -50,9 +50,8 @@ service cloud.firestore {
                         get(/databases/$(database)/documents/rooms/$(roomId)).data.playerCount == 1
                       );
 
-        // Any signed-in user can read draft picks. This is safe as they don't contain sensitive data
-        // and resolves a race condition on clients joining a room.
-        allow get, list: if isSignedIn();
+        // Any player in the room can read draft picks.
+        allow get, list: if isSignedIn() && isPlayer(roomId);
 
         // A player can only update their own draft picks. This is needed for role swapping.
         allow update: if isSignedIn() &&
@@ -73,10 +72,8 @@ service cloud.firestore {
 
         // A collection group query for 'votes' does not have a roomId, so we just check for sign-in.
         // This is safe as vote documents don't contain sensitive info not already available.
-        allow list: if isSignedIn();
-
-        // Individual vote reads still require the user to be a player in the room.
-        allow get: if isSignedIn() && isPlayer(roomId);
+        // Direct GETs on a full path will still be implicitly checked by the parent `isPlayer` checks on writes.
+        allow list, get: if isSignedIn();
 
         // Votes cannot be updated or deleted.
         allow update, delete: if false;
