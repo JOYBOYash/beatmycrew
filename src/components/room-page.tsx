@@ -64,6 +64,7 @@ export type DraftedCharacterState = {
   info: Character;
   imageUrl: string;
   role: Role;
+  playerId: string;
 };
 
 type CrewWithDataUri = Record<
@@ -195,9 +196,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   const { data: draftPicks, isLoading: areDraftPicksLoading } = useCollection<DraftPick>(
     `rooms/${roomId}/draftPicks`
   );
-  const { data: votes } = useCollection<Vote>('votes', {
-    isCollectionGroup: true,
-  });
+  const { data: votes } = useCollection<Vote>(`rooms/${roomId}/votes`);
 
   const isLoading = isRoomLoading || arePlayersLoading || areDraftPicksLoading;
 
@@ -229,6 +228,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
           },
           imageUrl: pick.characterImageUrl,
           role: pick.role as Role,
+          playerId: pick.playerId,
         };
       }
     });
@@ -295,8 +295,8 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     setCharacterPool(newPool);
 
     const imageUrl = await getCharImage(character.name);
-
-    setDraftedCharacter({ id: 'new-draft', info: character, imageUrl, role: 'Captain' /* placeholder */ });
+    if(!user) return;
+    setDraftedCharacter({ id: 'new-draft', info: character, imageUrl, role: 'Captain' /* placeholder */, playerId: user.uid});
   };
 
   const handleDraft = () => {
@@ -376,9 +376,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       scores[p.id] = { total: 0, count: 0, avg: 0 };
     });
 
-    const roomVotes = votes.filter((v) => v.id.startsWith(roomId));
-
-    roomVotes.forEach((vote) => {
+    votes.forEach((vote) => {
       if (scores[vote.targetPlayerId] && vote.voterId !== vote.targetPlayerId) {
         scores[vote.targetPlayerId].total += vote.score;
         scores[vote.targetPlayerId].count += 1;
@@ -392,7 +390,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     }
 
     return scores;
-  }, [phase, votes, players, roomId]);
+  }, [phase, votes, players]);
 
   const sortedPlayers = useMemo(() => {
     if (phase !== 'result' || isSinglePlayer) return players;
@@ -657,7 +655,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                       mobileCharSelected,
                   })}
                   draggable={isMyTurn}
-                   onDragStart={(e) => handleDragStart(e, {...draftedCharacter, id: "new-draft", playerId: user.uid, role: 'Captain' /* placeholder */})}
+                   onDragStart={(e) => draftedCharacter && handleDragStart(e, draftedCharacter)}
                 >
                   <WantedPosterCard
                     character={draftedCharacter}

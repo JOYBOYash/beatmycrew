@@ -70,10 +70,8 @@ service cloud.firestore {
                         get(/databases/$(database)/documents/rooms/$(roomId)).data.playerCount == 1
                       );
 
-        // A collection group query for 'votes' does not have a roomId, so we just check for sign-in.
-        // This is safe as vote documents don't contain sensitive info not already available.
-        // Direct GETs on a full path will still be implicitly checked by the parent `isPlayer` checks on writes.
-        allow list, get: if isSignedIn();
+        // Any player in the room can see all votes.
+        allow list, get: if isSignedIn() && isPlayer(roomId);
 
         // Votes cannot be updated or deleted.
         allow update, delete: if false;
