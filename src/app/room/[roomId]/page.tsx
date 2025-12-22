@@ -64,11 +64,11 @@ export default function LobbyPage({ params }: { params: Promise<{ roomId: string
     }
   };
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(roomId);
     toast({
-      title: "Link Copied!",
-      description: "You can now share the link with your friends.",
+      title: "Room Code Copied!",
+      description: "You can now share the code with your friends.",
     });
   };
 
@@ -128,7 +128,7 @@ export default function LobbyPage({ params }: { params: Promise<{ roomId: string
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={handleCopyLink}
+                  onClick={handleCopyCode}
                   className="text-white/70 hover:text-white hover:bg-white/10"
                 >
                   <Copy className="h-5 w-5" />
