@@ -313,8 +313,7 @@ export async function randomizeCrew(
 export async function submitVotes(
   roomId: string,
   votes: Omit<Vote, 'id'>[],
-  playerCount: number,
-  existingVotes: Vote[]
+  playerCount: number
 ) {
   const batch = writeBatch(db);
   const votesCollectionRef = collection(db, `rooms/${roomId}/votes`);
@@ -323,17 +322,17 @@ export async function submitVotes(
     const voteRef = doc(votesCollectionRef);
     batch.set(voteRef, vote);
   });
+  
+  // After writing the new votes, check if the game should be finished.
+  const votesQuery = query(votesCollectionRef);
+  const votesSnapshot = await getDocs(votesQuery);
+  const existingVotesCount = votesSnapshot.size;
+  const newTotalVotes = existingVotesCount + votes.length;
 
-  const roomRef = doc(db, 'rooms', roomId);
+  const totalVotesExpected = playerCount > 1 ? playerCount * (playerCount - 1) : 1;
 
-  const roomVotes = existingVotes.filter(v => v.id.startsWith(roomId));
-
-  // Multiplayer mode: Check if all players have voted
-  const totalVotesExpected =
-    playerCount * (playerCount > 1 ? playerCount - 1 : 1);
-  const currentVotes = (roomVotes.length || 0) + votes.length;
-
-  if (currentVotes >= totalVotesExpected) {
+  if (newTotalVotes >= totalVotesExpected) {
+    const roomRef = doc(db, 'rooms', roomId);
     batch.update(roomRef, { status: 'finished' });
   }
 

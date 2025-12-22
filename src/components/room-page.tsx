@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, type ReactNode } from 'react';
@@ -363,7 +362,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       return;
     }
 
-    await submitVotes(roomId, votesToSubmit, room.playerCount, votes);
+    await submitVotes(roomId, votesToSubmit, room.playerCount);
   };
 
   const finalScores = useMemo(() => {
@@ -892,5 +891,3 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     </div>
   );
 }
-
-    
