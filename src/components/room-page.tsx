@@ -261,14 +261,18 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     } else if (room?.status === 'finished') {
       setPhase('result');
     } else if (allCrewsFull && room?.status === 'drafting') {
-      if (!isSinglePlayer) {
-        setPhase('voting');
-      } else {
-        // For single player, go straight to result after drafting
-        setPhase('result');
-      }
+        const newStatus = isSinglePlayer ? 'finished' : 'voting';
+        if (newStatus !== room?.status) {
+            if (user?.uid === room.hostId) {
+                // To prevent multiple writes, only host updates status
+                const { getFirestore, doc, updateDoc } = require('firebase/firestore');
+                const db = getFirestore();
+                updateDoc(doc(db, 'rooms', roomId), { status: newStatus, currentPlayerId: null });
+            }
+        }
+        setPhase(newStatus);
     }
-  }, [allCrewsFull, room, isSinglePlayer]);
+  }, [allCrewsFull, room, isSinglePlayer, user, roomId]);
 
 
   const initializePool = async () => {
@@ -336,8 +340,17 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     router.push('/build');
   };
 
+  const { voters, hasVoted } = useMemo(() => {
+    if (!votes) return { voters: new Set(), hasVoted: false };
+    const voterIds = new Set(votes.map(v => v.voterId));
+    return {
+      voters: voterIds,
+      hasVoted: user ? voterIds.has(user.uid) : false,
+    };
+  }, [votes, user]);
+
   const handleSubmitVotes = async () => {
-    if (!user || !room) return;
+    if (!user || !room || hasVoted) return;
 
     const votesToSubmit: Omit<Vote, 'id'>[] = otherPlayers.map((p) => ({
       voterId: user.uid,
@@ -362,7 +375,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       return;
     }
 
-    await submitVotes(roomId, votesToSubmit, room.playerCount);
+    await submitVotes(roomId, votesToSubmit, room.playerCount, voters.size + 1);
   };
 
   const finalScores = useMemo(() => {
@@ -856,11 +869,16 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 </div>
             )}
             
-            <div className="text-center mt-8 flex justify-center gap-4">
-              {phase === 'voting' && (
-                <Button onClick={handleSubmitVotes} size="lg">
-                  Submit Votes
-                </Button>
+            <div className="text-center mt-8 space-y-2">
+              {phase === 'voting' && !isSinglePlayer && (
+                <>
+                  <Button onClick={handleSubmitVotes} size="lg" disabled={hasVoted}>
+                    {hasVoted ? 'Votes Submitted' : 'Submit Votes'}
+                  </Button>
+                  <p className="text-sm text-white/60">
+                    ({voters.size}/{players.length} players have voted)
+                  </p>
+                </>
               )}
               {phase === 'result' && (
                  <>
@@ -891,3 +909,5 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     </div>
   );
 }
+
+    

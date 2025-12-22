@@ -214,21 +214,10 @@ export async function selectCharacterForPlayer(
   batch.set(draftPickRef, draftPickData);
 
   const roomRef = doc(db, 'rooms', roomId);
-
-  const draftPicksCollection = collection(db, `rooms/${roomId}/draftPicks`);
-  const draftPicksSnapshot = await getDocs(draftPicksCollection);
-  const totalPicks = (draftPicksSnapshot.size || 0) + 1; // +1 for the current pick
-  const totalSlots = playerCount * 8; // 8 roles per player
-
-  if (totalPicks >= totalSlots) {
-    const finalStatus = playerCount === 1 ? 'finished' : 'voting';
-    batch.update(roomRef, { status: finalStatus, currentPlayerId: null });
-  } else {
-    const currentIndex = turnOrder.indexOf(playerId);
-    const nextPlayerIndex = (currentIndex + 1) % turnOrder.length;
-    const nextPlayerId = turnOrder[nextPlayerIndex];
-    batch.update(roomRef, { currentPlayerId: nextPlayerId });
-  }
+  const currentIndex = turnOrder.indexOf(playerId);
+  const nextPlayerIndex = (currentIndex + 1) % turnOrder.length;
+  const nextPlayerId = turnOrder[nextPlayerIndex];
+  batch.update(roomRef, { currentPlayerId: nextPlayerId });
 
   await batch.commit().catch((err) => {
     const permissionError = new FirestorePermissionError({
@@ -313,7 +302,8 @@ export async function randomizeCrew(
 export async function submitVotes(
   roomId: string,
   votes: Omit<Vote, 'id'>[],
-  playerCount: number
+  playerCount: number,
+  newVoterCount: number
 ) {
   const batch = writeBatch(db);
   const votesCollectionRef = collection(db, `rooms/${roomId}/votes`);
@@ -323,15 +313,9 @@ export async function submitVotes(
     batch.set(voteRef, vote);
   });
   
-  // After writing the new votes, check if the game should be finished.
-  const votesQuery = query(votesCollectionRef);
-  const votesSnapshot = await getDocs(votesQuery);
-  const existingVotesCount = votesSnapshot.size;
-  const newTotalVotes = existingVotesCount + votes.length;
+  const totalVotesExpected = playerCount > 1 ? playerCount : 1;
 
-  const totalVotesExpected = playerCount > 1 ? playerCount * (playerCount - 1) : 1;
-
-  if (newTotalVotes >= totalVotesExpected) {
+  if (newVoterCount >= totalVotesExpected) {
     const roomRef = doc(db, 'rooms', roomId);
     batch.update(roomRef, { status: 'finished' });
   }
@@ -359,3 +343,5 @@ export async function setPlayerCount(roomId: string, count: number) {
     throw err;
   });
 }
+
+    
