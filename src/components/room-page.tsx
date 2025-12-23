@@ -337,7 +337,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   };
 
   const handlePlayAgain = () => {
-    router.push('/build');
+    router.push('/');
   };
 
   const { voters, hasVoted } = useMemo(() => {
@@ -909,5 +909,3 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     </div>
   );
 }
-
-    
