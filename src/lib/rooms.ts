@@ -344,4 +344,21 @@ export async function setPlayerCount(roomId: string, count: number) {
   });
 }
 
+export async function updateRoomStatus(
+  roomId: string,
+  status: 'drafting' | 'voting' | 'finished'
+) {
+  const roomRef = doc(db, 'rooms', roomId);
+  await updateDoc(roomRef, { status: status, currentPlayerId: null }).catch(
+    (err) => {
+      const permissionError = new FirestorePermissionError({
+        path: roomRef.path,
+        operation: 'update',
+        requestResourceData: { status },
+      });
+      errorEmitter.emit('permission-error', permissionError);
+      throw err;
+    }
+  );
+}
     

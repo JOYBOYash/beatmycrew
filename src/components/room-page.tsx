@@ -44,6 +44,7 @@ import {
   submitVotes,
   swapCharacterRoles,
   Vote,
+  updateRoomStatus,
 } from '@/lib/rooms';
 
 type GamePhase = 'drafting' | 'voting' | 'result';
@@ -268,16 +269,14 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     } else if (room?.status === 'finished') {
       setPhase('result');
     } else if (allCrewsFull && room?.status === 'drafting') {
-        const newStatus = isSinglePlayer ? 'finished' : 'voting';
-        if (newStatus !== room?.status) {
-            if (user?.uid === room.hostId) {
-                // To prevent multiple writes, only host updates status
-                const { getFirestore, doc, updateDoc } = require('firebase/firestore');
-                const db = getFirestore();
-                updateDoc(doc(db, 'rooms', roomId), { status: newStatus, currentPlayerId: null });
-            }
+      const newStatus = isSinglePlayer ? 'finished' : 'voting';
+      if (newStatus !== room?.status) {
+        // To prevent multiple writes, only host updates status
+        if (user?.uid === room.hostId) {
+          updateRoomStatus(roomId, newStatus);
         }
-        setPhase(newStatus);
+      }
+      setPhase(newStatus);
     }
   }, [allCrewsFull, room, isSinglePlayer, user, roomId]);
 
