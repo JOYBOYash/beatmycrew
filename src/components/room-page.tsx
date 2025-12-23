@@ -753,7 +753,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 {/* Right Crews Column */}
                 <div className="lg:col-span-2 flex flex-col gap-6 h-full overflow-y-auto pr-2">
                     {sortedPlayersForDisplay.map(player => (
-                        <div key={player.id} className="relative p-6 flex-1 flex flex-col min-h-[500px]">
+                        <div key={player.id} className="relative p-6 flex-1 flex flex-col min-h-[550px]">
                             <Image src="/section.png" alt="Parchment Background" layout="fill" objectFit="cover" className="absolute inset-0 -z-10"/>
                             
                             <div className="relative self-center mb-4">
