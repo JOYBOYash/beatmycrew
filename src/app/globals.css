@@ -20,7 +20,7 @@
     --accent-foreground: 20 15% 25%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 48 20% 80%;
+
     --input: 48 20% 85%;
     --ring: 207 70% 53%; /* Sea Blue for rings */
     --radius: 0.5rem;
@@ -28,12 +28,11 @@
 }
  
 @layer base {
-  * {
-    @apply border-border;
-  }
   html,
   body {
     @apply text-foreground;
     overflow: hidden;
+    background-image: url(/public/map_bg.jpg);
+    background-size: cover;
   }
 }

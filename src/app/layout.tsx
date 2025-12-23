@@ -7,6 +7,14 @@ import VideoBackground from "@/components/video-background";
 import FirebaseClientProvider from "@/firebase/client-provider";
 import FirebaseErrorListener from "@/components/FirebaseErrorListener";
 import { UserProvider } from "@/firebase/auth/use-user";
+import { Pirata_One } from "next/font/google";
+
+const pirateFont = Pirata_One({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-pirate",
+});
+
 
 export const metadata: Metadata = {
   title: "BeatMyCrew",
@@ -19,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={pirateFont.variable} suppressHydrationWarning  >
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
@@ -33,10 +41,13 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
       </head>
-      <body className={cn("font-body antialiased min-h-screen")}>
+      <body className={cn("font-body antialiased min-h-screen")}
+        style={{
+          backgroundImage: "url('/map_bg.jpg')",
+        }}
+      >
         <FirebaseClientProvider>
           <UserProvider>
-            <VideoBackground />
             <div className="relative z-10">{children}</div>
             <Toaster />
             <FirebaseErrorListener />
