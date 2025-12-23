@@ -4,7 +4,6 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 import VideoBackground from "@/components/video-background";
-import TaskbarNav from "@/components/taskbar-nav";
 import FirebaseClientProvider from "@/firebase/client-provider";
 import FirebaseErrorListener from "@/components/FirebaseErrorListener";
 import { UserProvider } from "@/firebase/auth/use-user";
@@ -38,8 +37,7 @@ export default function RootLayout({
         <FirebaseClientProvider>
           <UserProvider>
             <VideoBackground />
-            <div className="relative z-10 pb-24">{children}</div>
-            <TaskbarNav />
+            <div className="relative z-10">{children}</div>
             <Toaster />
             <FirebaseErrorListener />
           </UserProvider>
