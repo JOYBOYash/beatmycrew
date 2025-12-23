@@ -108,7 +108,6 @@ const WantedPosterCard = ({
 }) => {
   const isApiFallback = character.imageUrl.includes('bmc_logo.png');
   const showFallback = isApiFallback || hasError;
-  const RoleIcon = roleIcons[character.role];
 
   return (
     <div
@@ -118,7 +117,7 @@ const WantedPosterCard = ({
       <h3 className="font-bold text-xs tracking-wider text-[#7f5b3b]">
         WANTED
       </h3>
-      <div className="w-full h-20 relative bg-black/10 border-2 border-[#b9936d]">
+      <div className="w-full h-[70%] relative bg-black/10 border-2 border-[#b9936d]">
         <Image
           src={showFallback ? '/bmc_logo.png' : character.imageUrl}
           alt={character.info.name}
@@ -132,17 +131,17 @@ const WantedPosterCard = ({
           onError={onImageError}
         />
       </div>
-      <p className="text-[8px] text-[#9c6d43]/70">
+      <p className="text-[8px] text-[#9c6d43]/70 mt-1">
         DEAD OR ALIVE
       </p>
-      <p className="font-bold text-xs leading-tight truncate w-full text-center text-[#9c6d43]">
+      <p className="font-bold text-sm leading-tight truncate w-full text-center text-[#9c6d43]">
         {character.info.name}
       </p>
       {isApiFallback && !getReportedIssues().includes(character.info.name) && (
         <Button
           size="sm"
           variant="destructive"
-          className="absolute bottom-1 right-1 h-auto p-1 text-xs opacity-0 group-hover:opacity-100 z-20"
+          className="absolute bottom-1 right-1 h-auto p-1 text-[10px] leading-none opacity-0 group-hover:opacity-100 z-20"
           onClick={(e) => {
             e.stopPropagation();
             addReportedIssue(character.info.name);
@@ -152,10 +151,6 @@ const WantedPosterCard = ({
           <AlertTriangle className="w-3 h-3 mr-1" /> Report
         </Button>
       )}
-      <div className="flex items-center justify-center gap-1 text-[#7f5b3b] -mt-1">
-        {RoleIcon && <RoleIcon className="w-3 h-3" />}
-        <span className="font-bold text-[10px]">{character.role}</span>
-      </div>
     </div>
   );
 };
@@ -615,6 +610,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   ) => {
     const isAssignable = !crewMember && draftedCharacter && isMyTurn;
     const isOwner = crewMember?.playerId === user?.uid;
+    const RoleIcon = roleIcons[role];
 
     const slotContent = (
       <>
@@ -651,12 +647,16 @@ export default function RoomPage({ roomId }: { roomId: string }) {
           draggable={isOwner && !!crewMember}
           onDragStart={(e) => crewMember && isOwner && handleDragStart(e, crewMember)}
           onDragEnd={handleDragEnd}
-          className={cn('w-full h-[140px] transition-all duration-200', {
+          className={cn('w-full h-[155px] transition-all duration-200', { // Increased height
             'hover:scale-105 hover:shadow-lg': isAssignable,
             'cursor-grab active:cursor-grabbing': isOwner && crewMember
           })}
         >
           {slotContent}
+        </div>
+        <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-[#9c6d43]">
+           <RoleIcon className="w-4 h-4" />
+           <span>{role}</span>
         </div>
       </div>
     );
@@ -752,7 +752,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                         <div key={player.id} className="relative p-6 flex-1 flex flex-col">
                             <Image src="/section.png" alt="Parchment Background" layout="fill" objectFit="cover" className="absolute inset-0 -z-10"/>
                             
-                            <div className="grid grid-cols-4 md:grid-cols-8 gap-2 mb-4">
+                            <div className="grid grid-cols-4 gap-4 mb-4">
                                 {ROLES.map(role => (
                                     <div className="w-full h-full" key={role}>
                                         {renderCrewMemberSlot(playerCrews[player.id]?.[role] || null, role, player.id === user.uid)}
@@ -816,7 +816,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                              key={role}
                              className="flex flex-col items-center gap-1 text-center"
                            >
-                             <div className="w-[80px] h-[155px] relative">
+                             <div className="w-full h-[180px] relative">
                                {crewMember ? (
                                   <WantedPosterCard character={crewMember} onImageError={() => handleImageError(crewMember.info.name)} hasError={imageErrors[crewMember.info.name]}/>
                                ) : (
@@ -825,7 +825,10 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                                  </div>
                                )}
                              </div>
-                             
+                             <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-white/70 mt-1">
+                                <RoleIcon className="w-4 h-4" />
+                                <span>{role}</span>
+                            </div>
                            </div>
                          );
                        })}
@@ -887,12 +890,13 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                           <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
                             {ROLES.map((role) => {
                               const crewMember = playerCrews[player.id]?.[role] || null;
+                               const RoleIcon = roleIcons[role];
                               return (
                                 <div
                                   key={role}
                                   className="flex flex-col items-center gap-1 text-center"
                                 >
-                                  <div className="w-full h-[155px] relative">
+                                  <div className="w-full h-[180px] relative">
                                     {crewMember ? (
                                        <WantedPosterCard character={crewMember} onImageError={() => handleImageError(crewMember.info.name)} hasError={imageErrors[crewMember.info.name]}/>
                                     ) : (
@@ -901,6 +905,10 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                                       </div>
                                     )}
                                   </div>
+                                   <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-white/70 mt-1">
+                                        <RoleIcon className="w-4 h-4" />
+                                        <span>{role}</span>
+                                    </div>
                                 </div>
                               );
                             })}
