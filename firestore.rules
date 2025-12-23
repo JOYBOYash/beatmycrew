@@ -24,8 +24,9 @@ service cloud.firestore {
       // Any signed-in user can view a room's details.
       allow get: if isSignedIn();
 
-      // Any player in the room can update the room.
-      allow update: if isSignedIn() && isPlayer(roomId);
+      // Any signed in user can update a room, as long as they don't change the host.
+      // This is necessary to allow new players to be added to the players array.
+      allow update: if isSignedIn() && request.resource.data.hostId == resource.data.hostId;
       
       // Rooms cannot be deleted.
       allow delete: if false;
