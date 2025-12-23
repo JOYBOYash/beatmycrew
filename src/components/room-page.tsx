@@ -89,7 +89,7 @@ const addReportedIssue = (characterName: string) => {
 };
 
 const getThreatLevel = (score: number) => {
-    if (score > 8) return { name: 'Yonko', color: 'text-red-400' };
+    if (score >= 9) return { name: 'Yonko', color: 'text-red-400' };
     if (score > 6) return { name: 'Warlord', color: 'text-purple-400' };
     if (score > 3) return { name: 'Supernova', color: 'text-blue-400' };
     return { name: 'Rookie', color: 'text-green-400' };
@@ -111,13 +111,13 @@ const WantedPosterCard = ({
 
   return (
     <div
-      className="w-full h-full bg-[url(/card_bg.png)] bg-cover bg-center p-2 flex flex-col items-center gap-1 shadow-lg relative group"
+      className="w-full h-full bg-[url(/card_bg_small.png)] bg-cover bg-center p-2 pt-1 flex flex-col items-center gap-0.5 shadow-lg relative group"
       {...props}
     >
-      <h3 className="font-headline font-black text-lg tracking-wider text-card-foreground/80">
+      <h3 className="font-bold text-xs tracking-wider text-[#7f5b3b]">
         WANTED
       </h3>
-      <div className="w-full h-32 relative bg-black/10 border-2 border-yellow-800/20">
+      <div className="w-full h-20 relative bg-black/10 border-2 border-[#b9936d]">
         <Image
           src={showFallback ? '/bmc_logo.png' : character.imageUrl}
           alt={character.info.name}
@@ -125,16 +125,16 @@ const WantedPosterCard = ({
           fill
           className={cn(
             'object-cover',
-            showFallback ? 'object-contain p-2' : 'object-top'
+            showFallback ? 'object-contain p-1' : 'object-top'
           )}
-          sizes="(max-width: 768px) 150px, 150px"
+          sizes="(max-width: 768px) 100px, 100px"
           onError={onImageError}
         />
       </div>
-      <p className="font-headline text-xs text-card-foreground/70">
+      <p className="text-[8px] text-[#9c6d43]/70">
         DEAD OR ALIVE
       </p>
-      <p className="font-headline font-bold text-base leading-tight truncate w-full text-center text-card-foreground">
+      <p className="font-bold text-xs leading-tight truncate w-full text-center text-[#9c6d43]">
         {character.info.name}
       </p>
       {isApiFallback && !getReportedIssues().includes(character.info.name) && (
@@ -154,6 +154,38 @@ const WantedPosterCard = ({
     </div>
   );
 };
+
+const LargeWantedPoster = ({ character, onImageError, hasError, ...props }: { character: DraftedCharacterState; onImageError: () => void; hasError: boolean; [key: string]: any;}) => {
+    const isApiFallback = character.imageUrl.includes('bmc_logo.png');
+    const showFallback = isApiFallback || hasError;
+
+    return (
+        <div className="w-full h-full bg-[url(/card_bg.png)] bg-cover bg-center p-4 flex flex-col items-center gap-1 shadow-lg" {...props}>
+             <h3 className="font-bold text-2xl tracking-wider text-[#7f5b3b]">
+                WANTED
+            </h3>
+            <div className="w-full h-56 relative bg-black/10 border-4 border-[#b9936d]">
+                 <Image
+                    src={showFallback ? '/bmc_logo.png' : character.imageUrl}
+                    alt={character.info.name}
+                    data-ai-hint={character.info.imageHint}
+                    fill
+                    className={cn(
+                        'object-cover',
+                        showFallback ? 'object-contain p-4' : 'object-top'
+                    )}
+                    sizes="250px"
+                    onError={onImageError}
+                />
+            </div>
+            <p className="text-sm text-[#9c6d43]/70">DEAD OR ALIVE</p>
+            <p className="font-bold text-2xl leading-tight w-full text-center text-[#9c6d43]">
+                {character.info.name}
+            </p>
+        </div>
+    );
+};
+
 
 async function getBase64Image(url: string): Promise<string | null> {
   try {
@@ -405,6 +437,10 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     for (const playerId in scores) {
       if (scores[playerId].count > 0) {
         scores[playerId].avg = scores[playerId].total / scores[playerId].count;
+      } else {
+        // In single player mode, get the self-vote score
+        const selfVote = votes.find(v => v.targetPlayerId === playerId && v.voterId === playerId);
+        scores[playerId].avg = selfVote ? selfVote.score : 0;
       }
     }
 
@@ -522,43 +558,48 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    e.currentTarget.classList.add('bg-accent/20');
+    const target = e.currentTarget as HTMLDivElement;
+    if (target.dataset.slotEmpty === 'true') {
+        target.classList.add('bg-[#cba47e]/30');
+    }
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
-    e.currentTarget.classList.remove('bg-accent/20');
+    (e.currentTarget as HTMLDivElement).classList.remove('bg-[#cba47e]/30');
   };
   
   const handleDrop = (e: React.DragEvent, targetRole: Role) => {
     e.preventDefault();
-    e.currentTarget.classList.remove('bg-accent/20');
-    e.currentTarget.closest('[draggable]')?.classList.remove('opacity-50');
+    (e.currentTarget as HTMLDivElement).classList.remove('bg-[#cba47e]/30');
+    (document.querySelector('.opacity-50') as HTMLElement)?.classList.remove('opacity-50');
     
     const draggedCharString = e.dataTransfer.getData('application/json');
     if (!draggedCharString || !myCrew) return;
     
     const draggedChar: DraftedCharacterState = JSON.parse(draggedCharString);
-
-    // Don't do anything if dropping on the same role
-    if(draggedChar.role === targetRole) return;
-    
     const targetChar = myCrew[targetRole];
 
-    // If dropping on an empty slot, it's an assignment, not a swap.
+    if (draggedChar.playerId !== user?.uid) return;
+
     if (!targetChar) {
+        // If it's a new character being dragged to an empty slot
         if (draggedChar.id === 'new-draft' && draftedCharacter) {
              assignCharacterToRole(targetRole);
         }
-        return;
+        // If it's an existing character being moved to an empty slot
+        else if (draggedChar.id !== 'new-draft') {
+            swapCharacterRoles(roomId, draggedChar.id, draggedChar.role, null, targetRole);
+        }
+    } else {
+        // If dropping on an occupied slot, perform a swap
+        if (targetChar.playerId !== user?.uid) return;
+        swapCharacterRoles(roomId, draggedChar.id, draggedChar.role, targetChar.id, targetChar.role);
     }
-
-    // Perform the swap
-    swapCharacterRoles(roomId, draggedChar.id, draggedChar.role, targetChar.id, targetChar.role);
   };
   
   const handleDragEnd = (e: React.DragEvent) => {
-    e.currentTarget.classList.remove('opacity-50');
+     (e.currentTarget as HTMLElement).classList.remove('opacity-50');
   }
 
 
@@ -568,8 +609,6 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     isMySlot: boolean
   ) => {
     const isAssignable = !crewMember && draftedCharacter && isMyTurn;
-    const isMobileAssignable = isMobile && isAssignable;
-    
     const isOwner = crewMember?.playerId === user?.uid;
 
     const slotContent = (
@@ -583,7 +622,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
         ) : (
           <div
             className={cn(
-              'w-full h-full flex items-center justify-center relative overflow-hidden bg-black/20 border-2 border-dashed border-white/20 rounded-lg p-2 text-white/40 text-3xl font-bold',
+              'w-full h-full flex items-center justify-center relative bg-[#cba47e]/20 border-2 border-dashed border-[#9c6d43]/50 rounded-md text-[#9c6d43]/40 text-3xl font-bold',
               isAssignable && 'cursor-pointer'
             )}
           >
@@ -596,34 +635,23 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     return (
       <div
         key={role}
-        className="flex flex-col items-center gap-1 w-full relative"
-        onClick={() =>
-          isMySlot &&
-          (isMobileAssignable
-            ? handleMobileSlotClick(role)
-            : isAssignable && assignCharacterToRole(role))
-        }
-        onDragOver={isOwner ? handleDragOver : undefined}
-        onDragLeave={isOwner ? handleDragLeave : undefined}
-        onDrop={(e) => isOwner ? handleDrop(e, role) : undefined}
+        className="flex flex-col items-center gap-1 w-full h-full relative"
+        onClick={() => isMySlot && isAssignable && assignCharacterToRole(role)}
+        onDragOver={isMySlot ? handleDragOver : undefined}
+        onDragLeave={isMySlot ? handleDragLeave : undefined}
+        onDrop={(e) => isMySlot ? handleDrop(e, role) : undefined}
+        data-slot-empty={!crewMember}
       >
         <div
           draggable={isOwner && !!crewMember}
           onDragStart={(e) => crewMember && isOwner && handleDragStart(e, crewMember)}
           onDragEnd={handleDragEnd}
-          className={cn('w-full h-48 md:h-56 relative transition-all duration-200', {
-            'ring-2 ring-accent ring-offset-2 ring-offset-background rounded-lg':
-              isMobileAssignable && mobileCharSelected,
-            'hover:scale-105 hover:shadow-lg hover:ring-2 hover:ring-accent':
-              isAssignable && !isMobile,
-             'cursor-grab active:cursor-grabbing': isOwner && crewMember
+          className={cn('w-full h-full transition-all duration-200', {
+            'hover:scale-105 hover:shadow-lg': isAssignable,
+            'cursor-grab active:cursor-grabbing': isOwner && crewMember
           })}
         >
           {slotContent}
-        </div>
-        <div className="flex items-center gap-1.5 text-white/70 -mt-1">
-          {React.createElement(roleIcons[role], { className: 'w-3 h-3' })}
-          <span className="font-semibold text-xs">{role}</span>
         </div>
       </div>
     );
@@ -638,109 +666,112 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   }
 
   return (
-    <div className="w-full h-screen">
+    <div className="w-full h-screen p-4 sm:p-6 lg:p-8">
       {phase === 'drafting' && (
-        <div className="flex flex-col md:flex-row h-full">
-          <div className="flex-shrink-0 w-full md:w-80 bg-black/30 backdrop-blur-sm border-r border-white/20 p-4 flex flex-col items-center justify-center gap-4">
-            <div className="text-center">
-              <h2 className="font-headline text-3xl text-white [text-shadow:_0_1px_10px_rgb(0_0_0_/_50%)]">
-                {isMyTurn ? 'Your Turn!' : 'Waiting...'}
-              </h2>
-              <p className="text-white/70">
-                {isMyTurn
-                  ? 'Draft a character for your crew.'
-                  : 'Waiting for other players to draft.'}
-              </p>
+        <main className="w-full h-full flex flex-col">
+            {/* Header */}
+            <div className="relative self-center mb-4">
+                <Image src="/head.png" alt="Draft Crew" width={400} height={100} className="w-72 md:w-96"/>
+                <h1 className="absolute inset-0 flex items-center justify-center text-3xl md:text-4xl font-bold" style={{background: "linear-gradient(180deg, #ffd3a5, #6b451e, #472a0d)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                    DRAFT CREW
+                </h1>
             </div>
 
-            <div
-              className={cn(
-                'w-56 h-80 transition-all',
-                draftedCharacter && isMyTurn && isMobile && 'cursor-pointer'
-              )}
-              onClick={handleMobileDraftedCharClick}
-              onDrop={(e) => {
-                 const draggedCharString = e.dataTransfer.getData('application/json');
-                 if(draggedCharString) {
-                    setDraftedCharacter(JSON.parse(draggedCharString));
-                 }
-              }}
-              onDragOver={handleDragOver}
-            >
-              {draftedCharacter ? (
-                <div
-                  className={cn('w-full h-full', {
-                    'ring-2 ring-accent ring-offset-2 ring-offset-background rounded-lg':
-                      mobileCharSelected,
-                  })}
-                  draggable={isMyTurn}
-                   onDragStart={(e) => draftedCharacter && handleDragStart(e, draftedCharacter)}
-                >
-                  <WantedPosterCard
-                    character={draftedCharacter}
-                    onImageError={() =>
-                      handleImageError(draftedCharacter.info.name)
-                    }
-                    hasError={imageErrors[draftedCharacter.info.name]}
-                  />
-                </div>
-              ) : (
-                <Button
-                  variant="outline"
-                  className="w-full h-full bg-black/20 border-white/20 border-dashed text-white/60 hover:bg-black/30 hover:text-white"
-                  onClick={handleDraft}
-                  disabled={!isMyTurn}
-                >
-                  <Dices className="mr-2 h-5 w-5" />
-                  Draft Character
-                </Button>
-              )}
-            </div>
-
-            <div className="text-center space-y-2">
-              <div className="flex gap-2 justify-center flex-wrap">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleReroll}
-                  disabled={!draftedCharacter || !isMyTurn}
-                >
-                  <Dices className="mr-2 h-4 w-4" />
-                  Re-roll
-                </Button>
-                {isSinglePlayer && (
-                    <Button variant="outline" size="sm" onClick={handleRandomizeCrew}>
-                        <Shuffle className="mr-2 h-4 w-4" />
-                        Randomize Crew
-                    </Button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex-1 p-4 md:p-8 overflow-y-auto">
-            <div className="w-full max-w-7xl mx-auto">
-              <div className="space-y-8">
-                {players.map((player) => (
-                  <div key={player.id}>
-                    <h3 className="text-2xl font-headline mb-4 text-white/90">
-                      {player.displayName} {player.id === user.uid && '(You)'}
-                    </h3>
-                    <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
-                      {ROLES.map((role) =>
-                        renderCrewMemberSlot(
-                          playerCrews[player.id]?.[role] || null,
-                          role,
-                          player.id === user.uid
-                        )
-                      )}
+            <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left Drafting Column */}
+                <div className="lg:col-span-1 relative flex flex-col p-6">
+                     <Image src="/section.png" alt="Parchment Background" layout="fill" objectFit="cover" className="absolute inset-0 -z-10"/>
+                    <div className='text-center'>
+                         <h2 className="font-bold text-2xl text-[#b7341d]">
+                           {isMyTurn ? 'YOUR TURN!' : `${room?.players.find(p => p.id === room.currentPlayerId)?.displayName || 'Player'}'s Turn`}
+                        </h2>
+                        <p className="text-[#9c6d43] font-bold">
+                            {isMyTurn ? 'DRAFT A CHARACTER TO YOUR CREW' : 'Waiting for opponent...'}
+                        </p>
                     </div>
-                  </div>
-                ))}
-              </div>
+
+                    <div 
+                        className="flex-1 my-4"
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => {
+                            (e.currentTarget as HTMLDivElement).classList.remove('bg-[#cba47e]/30');
+                            const draggedCharString = e.dataTransfer.getData('application/json');
+                             if(draggedCharString && draftedCharacter) {
+                                const draggedChar: DraftedCharacterState = JSON.parse(draggedCharString);
+                                if(draggedChar.id !== 'new-draft') { // only allow dropping existing chars here
+                                    swapCharacterRoles(roomId, draftedCharacter.id, null, draggedChar.id, draggedChar.role);
+                                    setDraftedCharacter(draggedChar);
+                                }
+                             }
+                        }}
+                    >
+                         {draftedCharacter ? (
+                            <div 
+                                className="w-full h-full max-w-sm mx-auto"
+                                draggable={isMyTurn}
+                                onDragStart={(e) => draftedCharacter && handleDragStart(e, draftedCharacter)}
+                                onDragEnd={handleDragEnd}
+                            >
+                                <LargeWantedPoster
+                                    character={draftedCharacter}
+                                    onImageError={() => handleImageError(draftedCharacter.info.name)}
+                                    hasError={imageErrors[draftedCharacter.info.name]}
+                                />
+                            </div>
+                        ) : (
+                            <button
+                                className="w-full h-full max-w-sm mx-auto bg-[#cba47e]/20 border-4 border-dashed border-[#9c6d43]/50 rounded-lg flex flex-col items-center justify-center text-[#9c6d43]/60 hover:bg-[#cba47e]/30 transition-colors"
+                                onClick={handleDraft}
+                                disabled={!isMyTurn}
+                            >
+                                <Dices className="w-16 h-16" />
+                                <span className='font-bold text-xl mt-2'>DRAFT CHARACTER</span>
+                            </button>
+                        )}
+                    </div>
+
+                     <div className="flex items-end justify-center gap-4">
+                        <Image src="/logo-colored.png" alt="Logo" width={100} height={62} className="w-24 h-auto -mb-2"/>
+                        <button 
+                            onClick={handleReroll} 
+                            disabled={!draftedCharacter || !isMyTurn} 
+                            className="bg-[#cba47e] border-2 border-[#9c6d43] text-[#6b451e] font-bold px-8 py-2 rounded-full hover:bg-[#b9936d] disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+                        >
+                            RE-ROLL
+                        </button>
+                     </div>
+                </div>
+
+                {/* Right Crews Column */}
+                <div className="lg:col-span-2 flex flex-col gap-6">
+                    {players.map(player => (
+                        <div key={player.id} className="relative p-6 flex-1 flex flex-col">
+                            <Image src="/section.png" alt="Parchment Background" layout="fill" objectFit="cover" className="absolute inset-0 -z-10"/>
+                            
+                            <div className="grid grid-cols-8 gap-2 mb-4">
+                                {ROLES.map(role => (
+                                    <div className="w-full h-32" key={role}>
+                                        {renderCrewMemberSlot(playerCrews[player.id]?.[role] || null, role, player.id === user.uid)}
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            <div className="relative self-end mt-auto -mr-12 -mb-2">
+                                <Image src="/head.png" alt="Roster" width={300} height={80} className="w-64"/>
+                                <h3 className="absolute inset-0 flex items-center justify-center text-xl font-bold pr-4" style={{background: "linear-gradient(180deg, #ffd3a5, #6b451e, #472a0d)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                                    {player.displayName}'s ROSTER
+                                </h3>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
-          </div>
-        </div>
+             <div className="absolute bottom-6 right-10 text-sm font-bold">
+                <span style={{ background: "linear-gradient(180deg, #ffd3a5, #6b451e, #472a0d)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                    CREATED BY JOYBOY
+                </span>
+            </div>
+        </main>
       )}
 
       {(phase === 'voting' || phase === 'result') && (
@@ -856,7 +887,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                                   key={role}
                                   className="flex flex-col items-center gap-1 text-center"
                                 >
-                                  <div className="w-[80px] h-[140px] relative">
+                                  <div className="w-full h-32 relative">
                                     {crewMember ? (
                                        <WantedPosterCard character={crewMember} onImageError={() => handleImageError(crewMember.info.name)} hasError={imageErrors[crewMember.info.name]}/>
                                     ) : (

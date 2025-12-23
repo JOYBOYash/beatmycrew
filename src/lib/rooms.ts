@@ -35,6 +35,7 @@ export interface Room {
   turnOrder?: string[];
   currentPlayerId?: string;
   playerCount: 1 | 2 | 4;
+  players: {id: string, displayName: string}[];
 }
 
 export interface Player {
@@ -70,18 +71,25 @@ export async function createRoom(
 ): Promise<string> {
   const roomId = Math.random().toString(36).substring(2, 7).toUpperCase();
   const roomRef = doc(db, 'rooms', roomId);
+  
+  const hostPlayer = {
+    id: hostId,
+    displayName: displayName || generateFunnyName(),
+  };
+
   const roomData: Room = {
     id: roomId,
     hostId,
     status: 'lobby',
     createdAt: serverTimestamp(),
     playerCount: 1, // Default to 1 player
+    players: [hostPlayer]
   };
 
   const playerRef = doc(db, `rooms/${roomId}/players`, hostId);
   const playerData: Player = {
     id: hostId,
-    displayName: displayName || generateFunnyName(),
+    displayName: hostPlayer.displayName,
   };
 
   try {
@@ -118,22 +126,42 @@ export async function addPlayerToRoom(
   displayName?: string
 ) {
   if (!user) return;
-  const playerRef = doc(db, `rooms/${roomId}/players`, user.uid);
-  const playerData: Player = {
+  const roomRef = doc(db, 'rooms', roomId);
+  const roomSnap = await getDoc(roomRef);
+  if (!roomSnap.exists()) throw new Error("Room does not exist");
+  
+  const roomData = roomSnap.data() as Room;
+  
+  const newPlayer: Player = {
     id: user.uid,
     displayName: displayName || user.displayName || generateFunnyName(),
   };
 
-  await setDoc(playerRef, playerData, { merge: true }).catch((err) => {
-    const permissionError = new FirestorePermissionError({
-      path: playerRef.path,
-      operation: 'write',
-      requestResourceData: playerData,
-    });
-    errorEmitter.emit('permission-error', permissionError);
-    throw err;
-  });
+  // Ensure player isn't already in the list
+  if (!roomData.players.some(p => p.id === newPlayer.id)) {
+      const updatedPlayers = [...roomData.players, newPlayer];
+      
+      const batch = writeBatch(db);
+      
+      // Update players array in the main room document
+      batch.update(roomRef, { players: updatedPlayers });
+
+      // Create the player sub-collection document
+      const playerDocRef = doc(db, `rooms/${roomId}/players`, user.uid);
+      batch.set(playerDocRef, newPlayer);
+
+      await batch.commit().catch((err) => {
+        const permissionError = new FirestorePermissionError({
+            path: roomRef.path,
+            operation: 'update',
+            requestResourceData: { players: updatedPlayers },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw err;
+      });
+  }
 }
+
 
 /**
  * Lets a user join a room, which involves adding them as a player.
@@ -153,13 +181,10 @@ export async function joinRoom(
     throw new Error('Room not found');
   }
 
-  const playersSnap = await getDocs(collection(db, `rooms/${roomId}/players`));
   const roomData = roomSnap.data() as Room;
 
-  if (playersSnap.size >= roomData.playerCount) {
-    // Allow re-joining if already in the player list
-    const playerIds = playersSnap.docs.map((d) => d.id);
-    if (!playerIds.includes(user.uid)) {
+  if (roomData.players.length >= roomData.playerCount) {
+    if (!roomData.players.some(p => p.id === user.uid)) {
       throw new Error('Room is full');
     }
   }
@@ -233,8 +258,8 @@ export async function selectCharacterForPlayer(
 export async function swapCharacterRoles(
   roomId: string,
   pick1Id: string,
-  pick1Role: Role,
-  pick2Id: string,
+  pick1Role: Role | null,
+  pick2Id: string | null,
   pick2Role: Role
 ) {
     const batch = writeBatch(db);
@@ -242,8 +267,10 @@ export async function swapCharacterRoles(
     const pick1Ref = doc(db, `rooms/${roomId}/draftPicks`, pick1Id);
     batch.update(pick1Ref, { role: pick2Role });
 
-    const pick2Ref = doc(db, `rooms/${roomId}/draftPicks`, pick2Id);
-    batch.update(pick2Ref, { role: pick1Role });
+    if (pick2Id) {
+      const pick2Ref = doc(db, `rooms/${roomId}/draftPicks`, pick2Id);
+      batch.update(pick2Ref, { role: pick1Role });
+    }
 
     await batch.commit().catch((err) => {
         const permissionError = new FirestorePermissionError({
