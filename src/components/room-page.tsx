@@ -108,6 +108,7 @@ const WantedPosterCard = ({
 }) => {
   const isApiFallback = character.imageUrl.includes('bmc_logo.png');
   const showFallback = isApiFallback || hasError;
+  const RoleIcon = roleIcons[character.role];
 
   return (
     <div
@@ -151,6 +152,10 @@ const WantedPosterCard = ({
           <AlertTriangle className="w-3 h-3 mr-1" /> Report
         </Button>
       )}
+      <div className="flex items-center justify-center gap-1 text-[#7f5b3b] -mt-1">
+        {RoleIcon && <RoleIcon className="w-3 h-3" />}
+        <span className="font-bold text-[10px]">{character.role}</span>
+      </div>
     </div>
   );
 };
@@ -646,7 +651,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
           draggable={isOwner && !!crewMember}
           onDragStart={(e) => crewMember && isOwner && handleDragStart(e, crewMember)}
           onDragEnd={handleDragEnd}
-          className={cn('w-full h-full transition-all duration-200', {
+          className={cn('w-full h-[140px] transition-all duration-200', {
             'hover:scale-105 hover:shadow-lg': isAssignable,
             'cursor-grab active:cursor-grabbing': isOwner && crewMember
           })}
@@ -666,21 +671,20 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   }
 
   return (
-    <div className="w-full h-screen p-4 sm:p-6 lg:p-8">
+    <div className="w-full h-screen p-4 sm:p-6 lg:p-8 overflow-hidden">
       {phase === 'drafting' && (
         <main className="w-full h-full flex flex-col">
-            {/* Header */}
-            <div className="relative self-center mb-4">
-                <Image src="/head.png" alt="Draft Crew" width={400} height={100} className="w-72 md:w-96"/>
-                <h1 className="absolute inset-0 flex items-center justify-center text-3xl md:text-4xl font-bold" style={{background: "linear-gradient(180deg, #ffd3a5, #6b451e, #472a0d)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                    DRAFT CREW
-                </h1>
-            </div>
-
-            <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
                 {/* Left Drafting Column */}
-                <div className="lg:col-span-1 relative flex flex-col p-6">
+                <div className="lg:col-span-1 relative flex flex-col p-6 items-center">
                      <Image src="/section.png" alt="Parchment Background" layout="fill" objectFit="cover" className="absolute inset-0 -z-10"/>
+                    <div className="relative mb-4">
+                        <Image src="/head.png" alt="Draft Crew" width={400} height={100} className="w-72 md:w-96"/>
+                        <h1 className="absolute inset-0 flex items-center justify-center text-3xl md:text-4xl font-bold" style={{background: "linear-gradient(180deg, #b7341d, #762112, #5a1a0f)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                            DRAFT CREW
+                        </h1>
+                    </div>
+
                     <div className='text-center'>
                          <h2 className="font-bold text-2xl text-[#b7341d]">
                            {isMyTurn ? 'YOUR TURN!' : `${room?.players.find(p => p.id === room.currentPlayerId)?.displayName || 'Player'}'s Turn`}
@@ -691,7 +695,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                     </div>
 
                     <div 
-                        className="flex-1 my-4"
+                        className="flex-1 my-4 w-full"
                         onDragOver={handleDragOver}
                         onDrop={(e) => {
                             (e.currentTarget as HTMLDivElement).classList.remove('bg-[#cba47e]/30');
@@ -730,7 +734,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                         )}
                     </div>
 
-                     <div className="flex items-end justify-center gap-4">
+                     <div className="flex items-center justify-center gap-4 mt-auto">
                         <Image src="/logo-colored.png" alt="Logo" width={100} height={62} className="w-24 h-auto -mb-2"/>
                         <button 
                             onClick={handleReroll} 
@@ -748,9 +752,9 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                         <div key={player.id} className="relative p-6 flex-1 flex flex-col">
                             <Image src="/section.png" alt="Parchment Background" layout="fill" objectFit="cover" className="absolute inset-0 -z-10"/>
                             
-                            <div className="grid grid-cols-8 gap-2 mb-4">
+                            <div className="grid grid-cols-4 md:grid-cols-8 gap-2 mb-4">
                                 {ROLES.map(role => (
-                                    <div className="w-full h-32" key={role}>
+                                    <div className="w-full h-full" key={role}>
                                         {renderCrewMemberSlot(playerCrews[player.id]?.[role] || null, role, player.id === user.uid)}
                                     </div>
                                 ))}
@@ -759,12 +763,20 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                             <div className="relative self-end mt-auto -mr-12 -mb-2">
                                 <Image src="/head.png" alt="Roster" width={300} height={80} className="w-64"/>
                                 <h3 className="absolute inset-0 flex items-center justify-center text-xl font-bold pr-4" style={{background: "linear-gradient(180deg, #ffd3a5, #6b451e, #472a0d)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                                    {player.displayName}'s ROSTER
+                                    {player.displayName}'S ROSTER
                                 </h3>
                             </div>
                         </div>
                     ))}
                 </div>
+            </div>
+             <div className="absolute bottom-[-100px] left-[-100px] rotate-[-15deg] opacity-40">
+                <Image
+                src="/logo-colored.png"
+                alt="App Logo"
+                width={400}
+                height={250}
+                />
             </div>
              <div className="absolute bottom-6 right-10 text-sm font-bold">
                 <span style={{ background: "linear-gradient(180deg, #ffd3a5, #6b451e, #472a0d)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
@@ -804,7 +816,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                              key={role}
                              className="flex flex-col items-center gap-1 text-center"
                            >
-                             <div className="w-[80px] h-[140px] relative">
+                             <div className="w-[80px] h-[155px] relative">
                                {crewMember ? (
                                   <WantedPosterCard character={crewMember} onImageError={() => handleImageError(crewMember.info.name)} hasError={imageErrors[crewMember.info.name]}/>
                                ) : (
@@ -813,14 +825,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                                  </div>
                                )}
                              </div>
-                             <div className="flex items-center gap-1.5 text-white/70 -mt-1">
-                               {React.createElement(roleIcons[role], {
-                                 className: 'w-2 h-2',
-                               })}
-                               <span className="font-semibold text-[10px]">
-                                 {role}
-                               </span>
-                             </div>
+                             
                            </div>
                          );
                        })}
@@ -887,7 +892,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                                   key={role}
                                   className="flex flex-col items-center gap-1 text-center"
                                 >
-                                  <div className="w-full h-32 relative">
+                                  <div className="w-full h-[155px] relative">
                                     {crewMember ? (
                                        <WantedPosterCard character={crewMember} onImageError={() => handleImageError(crewMember.info.name)} hasError={imageErrors[crewMember.info.name]}/>
                                     ) : (
@@ -896,14 +901,6 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                                       </div>
                                     )}
                                   </div>
-                                   <div className="flex items-center gap-1.5 text-white/70 -mt-1">
-                                        {React.createElement(roleIcons[role], {
-                                        className: 'w-2 h-2',
-                                        })}
-                                        <span className="font-semibold text-[10px]">
-                                        {role}
-                                        </span>
-                                    </div>
                                 </div>
                               );
                             })}
