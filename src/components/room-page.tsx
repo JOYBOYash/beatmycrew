@@ -280,6 +280,17 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     () => (user ? playerCrews[user.uid] : null),
     [playerCrews, user]
   );
+  
+  const sortedPlayersForDisplay = useMemo(() => {
+    if (!user) return players;
+    return [...players].sort((a, b) => {
+      if (a.id === user.uid) return -1;
+      if (b.id === user.uid) return 1;
+      return 0;
+    });
+  }, [players, user]);
+
+
   const otherPlayers = useMemo(
     () => players.filter((p) => p.id !== user?.uid),
     [players, user]
@@ -740,10 +751,17 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 </div>
 
                 {/* Right Crews Column */}
-                <div className="lg:col-span-2 flex flex-col gap-6 overflow-y-auto">
-                    {players.map(player => (
-                        <div key={player.id} className="relative p-6 flex-1 flex flex-col min-h-[450px]">
+                <div className="lg:col-span-2 flex flex-col gap-6 h-full overflow-y-auto pr-2">
+                    {sortedPlayersForDisplay.map(player => (
+                        <div key={player.id} className="relative p-6 flex-1 flex flex-col min-h-[500px]">
                             <Image src="/section.png" alt="Parchment Background" layout="fill" objectFit="cover" className="absolute inset-0 -z-10"/>
+                            
+                            <div className="relative self-center mb-4">
+                                <Image src="/head.png" alt="Roster" width={300} height={80} className="w-64"/>
+                                <h3 className="absolute inset-0 flex items-center justify-center text-xl font-bold pr-4" style={{background: "linear-gradient(180deg, #ffd3a5, #6b451e, #472a0d)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                                    {player.displayName}'S ROSTER
+                                </h3>
+                            </div>
                             
                             <div className="grid grid-cols-4 p-4 gap-x-4 gap-y-6">
                                 {ROLES.map(role => (
@@ -752,13 +770,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                                     </div>
                                 ))}
                             </div>
-                            
-                            <div className="relative self-end mt-auto -mr-12 -mb-2">
-                                <Image src="/head.png" alt="Roster" width={300} height={80} className="w-64"/>
-                                <h3 className="absolute inset-0 flex items-center justify-center text-xl font-bold pr-4" style={{background: "linear-gradient(180deg, #ffd3a5, #6b451e, #472a0d)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                                    {player.displayName}'S ROSTER
-                                </h3>
-                            </div>
+
                         </div>
                     ))}
                 </div>

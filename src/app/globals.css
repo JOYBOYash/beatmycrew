@@ -44,4 +44,27 @@
     font-family: 'Paalalabas', sans-serif;
     letter-spacing: 0.05em;
   }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #cba47e; /* Light brown track */
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #8c5d33; /* Darker brown thumb */
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #6b451e; /* Even darker brown on hover */
+  }
+
+  ::-webkit-scrollbar-button {
+      display: none;
+  }
 }
