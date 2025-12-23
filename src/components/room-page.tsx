@@ -111,7 +111,7 @@ const WantedPosterCard = ({
 
   return (
     <div
-      className="w-full h-full bg-[url(/card_bg_small.png)] bg-cover bg-center p-2 pt-1 flex flex-col items-center gap-0.5 shadow-lg relative group"
+      className="w-full h-full bg-[url(/card_bg.png)] bg-cover bg-center p-2 pt-1 flex flex-col items-center gap-0.5 shadow-lg relative group"
       {...props}
     >
       <h3 className="font-bold text-xs tracking-wider text-[#7f5b3b]">
@@ -160,7 +160,7 @@ const LargeWantedPoster = ({ character, onImageError, hasError, ...props }: { ch
     const showFallback = isApiFallback || hasError;
 
     return (
-        <div className="w-full h-full bg-[url(/card_bg.png)] bg-cover bg-center p-4 flex flex-col items-center gap-1 shadow-lg" {...props}>
+        <div className="w-full h-[350px] bg-[url(/card_bg.png)] bg-cover bg-center p-4 flex flex-col items-center gap-1 shadow-lg" {...props}>
              <h3 className="font-bold text-2xl tracking-wider text-[#7f5b3b]">
                 WANTED
             </h3>
@@ -612,27 +612,6 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     const isOwner = crewMember?.playerId === user?.uid;
     const RoleIcon = roleIcons[role];
 
-    const slotContent = (
-      <>
-        {crewMember ? (
-          <WantedPosterCard
-            character={crewMember}
-            onImageError={() => handleImageError(crewMember.info.name)}
-            hasError={imageErrors[crewMember.info.name]}
-          />
-        ) : (
-          <div
-            className={cn(
-              'w-full h-full flex items-center justify-center relative bg-[#cba47e]/20 border-2 border-dashed border-[#9c6d43]/50 rounded-md text-[#9c6d43]/40 text-3xl font-bold',
-              isAssignable && 'cursor-pointer'
-            )}
-          >
-            ?
-          </div>
-        )}
-      </>
-    );
-
     return (
       <div
         key={role}
@@ -647,14 +626,29 @@ export default function RoomPage({ roomId }: { roomId: string }) {
           draggable={isOwner && !!crewMember}
           onDragStart={(e) => crewMember && isOwner && handleDragStart(e, crewMember)}
           onDragEnd={handleDragEnd}
-          className={cn('w-full h-[155px] transition-all duration-200', { // Increased height
+          className={cn('w-[150px] h-[180px] transition-all duration-200', {
             'hover:scale-105 hover:shadow-lg': isAssignable,
             'cursor-grab active:cursor-grabbing': isOwner && crewMember
           })}
         >
-          {slotContent}
+            {crewMember ? (
+              <WantedPosterCard
+                character={crewMember}
+                onImageError={() => handleImageError(crewMember.info.name)}
+                hasError={imageErrors[crewMember.info.name]}
+              />
+            ) : (
+              <div
+                className={cn(
+                  'w-full h-full flex items-center justify-center relative bg-[#cba47e]/20 border-2 border-dashed border-[#9c6d43]/50 rounded-md text-[#9c6d43]/40 text-3xl font-bold',
+                  isAssignable && 'cursor-pointer'
+                )}
+              >
+                ?
+              </div>
+            )}
         </div>
-        <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-[#9c6d43]">
+        <div className="flex items-center justify-center gap-2 mt-1 text-sm font-bold text-[#9c6d43]">
            <RoleIcon className="w-4 h-4" />
            <span>{role}</span>
         </div>
@@ -735,7 +729,6 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                     </div>
 
                      <div className="flex items-center justify-center gap-4 mt-auto">
-                        <Image src="/logo-colored.png" alt="Logo" width={100} height={62} className="w-24 h-auto -mb-2"/>
                         <button 
                             onClick={handleReroll} 
                             disabled={!draftedCharacter || !isMyTurn} 
@@ -747,12 +740,12 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 </div>
 
                 {/* Right Crews Column */}
-                <div className="lg:col-span-2 flex flex-col gap-6">
+                <div className="lg:col-span-2 flex flex-col gap-6 overflow-y-auto">
                     {players.map(player => (
-                        <div key={player.id} className="relative p-6 flex-1 flex flex-col">
+                        <div key={player.id} className="relative p-6 flex-1 flex flex-col min-h-[450px]">
                             <Image src="/section.png" alt="Parchment Background" layout="fill" objectFit="cover" className="absolute inset-0 -z-10"/>
                             
-                            <div className="grid grid-cols-4 gap-4 mb-4">
+                            <div className="grid grid-cols-4 p-4 gap-x-4 gap-y-6">
                                 {ROLES.map(role => (
                                     <div className="w-full h-full" key={role}>
                                         {renderCrewMemberSlot(playerCrews[player.id]?.[role] || null, role, player.id === user.uid)}
@@ -774,8 +767,8 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 <Image
                 src="/logo-colored.png"
                 alt="App Logo"
-                width={400}
-                height={250}
+                width={300}
+                height={185}
                 />
             </div>
              <div className="absolute bottom-6 right-10 text-sm font-bold">
