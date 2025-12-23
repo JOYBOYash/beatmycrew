@@ -1,11 +1,9 @@
+'use client';
 
-"use client";
-
-import { useState, useEffect, useMemo, type DragEvent } from "react";
+import { useState, useEffect, useMemo, type ReactNode } from 'react';
 import React from 'react';
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import Link from "next/link";
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { toPng } from 'html-to-image';
 import {
   Character,
@@ -13,28 +11,47 @@ import {
   ROLES,
   generateCharacterPool,
   fetchAllCharacters,
-} from "@/lib/characters";
-import { getCharImage } from "@/lib/character-images";
+} from '@/lib/characters';
+import { getCharImage } from '@/lib/character-images';
+import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { Download, Home, Share2, Users, Star, RotateCw, Replace, X, AlertTriangle, Settings, RefreshCcw, Dices, Swords, ArrowLeft, Anchor, Award, Compass, Crosshair, ChefHat, Stethoscope, Hammer } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
-import CrewCertificate from "./crew-certificate";
+  Download,
+  RotateCw,
+  AlertTriangle,
+  Dices,
+  Swords,
+  Anchor,
+  Award,
+  Compass,
+  Crosshair,
+  ChefHat,
+  Stethoscope,
+  Hammer,
+  Shuffle,
+} from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
+import CrewCertificate from './crew-certificate';
+import { useCollection, useDocument, useUser } from '@/firebase';
+import {
+  DraftPick,
+  Player,
+  Room,
+  randomizeCrew,
+  selectCharacterForPlayer,
+  submitVotes,
+  swapCharacterRoles,
+  Vote,
+  updateRoomStatus,
+} from '@/lib/rooms';
 
-type GamePhase = "drafting" | "swapping" | "voting" | "result";
+type GamePhase = 'drafting' | 'voting' | 'result';
 
 const roleIcons: Record<Role, React.ComponentType<{ className?: string }>> = {
   Captain: Anchor,
-  "Vice-Captain": Award,
+  'Vice-Captain': Award,
   Navigator: Compass,
   Sniper: Crosshair,
   Cook: ChefHat,
@@ -44,665 +61,867 @@ const roleIcons: Record<Role, React.ComponentType<{ className?: string }>> = {
 };
 
 export type DraftedCharacterState = {
+  id: string; // This should be the draftPick document ID
   info: Character;
   imageUrl: string;
+  role: Role;
+  playerId: string;
 };
 
-type CrewWithDataUri = Record<Role, (DraftedCharacterState & { dataUri: string | null }) | null>;
+type CrewWithDataUri = Record<
+  Role,
+  (DraftedCharacterState & { dataUri: string | null }) | null
+>;
 
 const getReportedIssues = (): string[] => {
-    if (typeof window === 'undefined') return [];
-    const issues = localStorage.getItem('reportedIssues');
-    return issues ? JSON.parse(issues) : [];
+  if (typeof window === 'undefined') return [];
+  const issues = localStorage.getItem('reportedIssues');
+  return issues ? JSON.parse(issues) : [];
 };
-  
+
 const addReportedIssue = (characterName: string) => {
-    if (typeof window === 'undefined') return;
-    const issues = getReportedIssues();
-    if (!issues.includes(characterName)) {
-        const newIssues = [...issues, characterName];
-        localStorage.setItem('reportedIssues', JSON.stringify(newIssues));
-    }
+  if (typeof window === 'undefined') return;
+  const issues = getReportedIssues();
+  if (!issues.includes(characterName)) {
+    const newIssues = [...issues, characterName];
+    localStorage.setItem('reportedIssues', JSON.stringify(newIssues));
+  }
+};
+
+const getThreatLevel = (score: number) => {
+    if (score > 8) return { name: 'Yonko', color: 'text-red-400' };
+    if (score > 6) return { name: 'Warlord', color: 'text-purple-400' };
+    if (score > 3) return { name: 'Supernova', color: 'text-blue-400' };
+    return { name: 'Rookie', color: 'text-green-400' };
 };
 
 const WantedPosterCard = ({
-    character,
-    onImageError,
-    hasError,
-    isSwapSource,
-    canBeSwapTarget,
-    onClick,
-    ...props
+  character,
+  onImageError,
+  hasError,
+  ...props
 }: {
-    character: DraftedCharacterState;
-    onImageError: () => void;
-    hasError: boolean;
-    isSwapSource?: boolean;
-    canBeSwapTarget?: boolean;
-    onClick?: () => void;
-    [key: string]: any;
+  character: DraftedCharacterState;
+  onImageError: () => void;
+  hasError: boolean;
+  [key: string]: any;
 }) => {
-    const isApiFallback = character.imageUrl.includes('bmc_logo.png');
-    const showFallback = isApiFallback || hasError;
+  const isApiFallback = character.imageUrl.includes('bmc_logo.png');
+  const showFallback = isApiFallback || hasError;
 
-    return (
-        <div
-            onClick={onClick}
-            className={cn(
-                "w-full h-full bg-[url(/card_bg.png)] bg-cover bg-center p-2 flex flex-col items-center gap-1 shadow-lg relative group",
-                {
-                    "cursor-pointer hover:ring-2 hover:ring-primary": canBeSwapTarget,
-                    "ring-2 ring-accent ring-offset-2 ring-offset-background rounded-lg": isSwapSource,
-                }
-            )}
-            {...props}
+  return (
+    <div
+      className="w-full h-full bg-[url(/card_bg.png)] bg-cover bg-center p-2 flex flex-col items-center gap-1 shadow-lg relative group"
+      {...props}
+    >
+      <h3 className="font-headline font-black text-lg tracking-wider text-card-foreground/80">
+        WANTED
+      </h3>
+      <div className="w-full h-32 relative bg-black/10 border-2 border-yellow-800/20">
+        <Image
+          src={showFallback ? '/bmc_logo.png' : character.imageUrl}
+          alt={character.info.name}
+          data-ai-hint={character.info.imageHint}
+          fill
+          className={cn(
+            'object-cover',
+            showFallback ? 'object-contain p-2' : 'object-top'
+          )}
+          sizes="(max-width: 768px) 150px, 150px"
+          onError={onImageError}
+        />
+      </div>
+      <p className="font-headline text-xs text-card-foreground/70">
+        DEAD OR ALIVE
+      </p>
+      <p className="font-headline font-bold text-base leading-tight truncate w-full text-center text-card-foreground">
+        {character.info.name}
+      </p>
+      {isApiFallback && !getReportedIssues().includes(character.info.name) && (
+        <Button
+          size="sm"
+          variant="destructive"
+          className="absolute bottom-1 right-1 h-auto p-1 text-xs opacity-0 group-hover:opacity-100 z-20"
+          onClick={(e) => {
+            e.stopPropagation();
+            addReportedIssue(character.info.name);
+          }}
+          title={`Report image issue for ${character.info.name}`}
         >
-            <h3 className="font-headline font-black text-lg tracking-wider text-card-foreground/80">WANTED</h3>
-            <div className="w-full h-40 relative bg-black/10 border-2 border-yellow-800/20">
-                 <Image
-                    src={showFallback ? '/bmc_logo.png' : character.imageUrl}
-                    alt={character.info.name}
-                    data-ai-hint={character.info.imageHint}
-                    fill
-                    className={cn(
-                        "object-cover",
-                        showFallback ? "object-contain p-2" : "object-top"
-                    )}
-                    sizes="(max-width: 768px) 150px, 150px"
-                    onError={onImageError}
-                  />
-            </div>
-            <p className="font-headline text-xs text-card-foreground/70">DEAD OR ALIVE</p>
-            <p className="font-headline font-bold text-base leading-tight truncate w-full text-center text-card-foreground">
-                {character.info.name}
-            </p>
-             {isApiFallback && !getReportedIssues().includes(character.info.name) && (
-                 <Button
-                    size="sm"
-                    variant="destructive"
-                    className="absolute bottom-1 right-1 h-auto p-1 text-xs opacity-0 group-hover:opacity-100 z-20"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      addReportedIssue(character.info.name)
-                    }}
-                    title={`Report image issue for ${character.info.name}`}
-                 >
-                    <AlertTriangle className="w-3 h-3 mr-1" /> Report
-                 </Button>
-              )}
-        </div>
-    )
-}
+          <AlertTriangle className="w-3 h-3 mr-1" /> Report
+        </Button>
+      )}
+    </div>
+  );
+};
 
 async function getBase64Image(url: string): Promise<string | null> {
-    try {
-        const response = await fetch(`/api/image-proxy?url=${encodeURIComponent(url)}`);
-        if (!response.ok) return null;
-        const blob = await response.blob();
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-        });
-    } catch (error) {
-        console.error("Error converting image to Base64:", error);
-        return null;
-    }
+  try {
+    const response = await fetch(
+      `/api/image-proxy?url=${encodeURIComponent(url)}`
+    );
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error('Error converting image to Base64:', error);
+    return null;
+  }
 }
-
 
 export default function RoomPage({ roomId }: { roomId: string }) {
   const router = useRouter();
   const { toast } = useToast();
-  const [phase, setPhase] = useState<GamePhase>("drafting");
+  const { user } = useUser();
+
+  const [phase, setPhase] = useState<GamePhase>('drafting');
   const [allCharacters, setAllCharacters] = useState<Character[]>([]);
   const [characterPool, setCharacterPool] = useState<Character[]>([]);
-  const [draftedCharacter, setDraftedCharacter] = useState<DraftedCharacterState | null>(
-    null
+  const [draftedCharacter, setDraftedCharacter] =
+    useState<DraftedCharacterState | null>(null);
+
+  const [playerRatings, setPlayerRatings] = useState<Record<string, number>>(
+    {}
   );
-  const [myCrew, setMyCrew] = useState<Record<Role, DraftedCharacterState | null>>(
-    Object.fromEntries(ROLES.map((r) => [r, null])) as Record<
-      Role,
-      DraftedCharacterState | null
-    >
-  );
-  const [finalScore, setFinalScore] = useState<number>(0);
-  const [swappingCharacterRole, setSwappingCharacterRole] = useState<Role | null>(null);
-  const [isSwapMode, setIsSwapMode] = useState(false);
-  const [hasSwapped, setHasSwapped] = useState(false);
-  const [hasRerolled, setHasRerolled] = useState(false);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
-  const [isDraggingOver, setIsDraggingOver] = useState<Role | null>(null);
-  const [isCapturing, setIsCapturing] = useState(false);
-  const [crewForCertificate, setCrewForCertificate] = useState<CrewWithDataUri | null>(null);
-  
+
+  const [isSaving, setIsSaving] = useState(false);
+  const [crewForCertificate, setCrewForCertificate] =
+    useState<CrewWithDataUri | null>(null);
+
   const isMobile = useIsMobile();
   const [mobileCharSelected, setMobileCharSelected] = useState(false);
+
+  const { data: room, isLoading: isRoomLoading } = useDocument<Room>(`rooms/${roomId}`);
+  const { data: players, isLoading: arePlayersLoading } = useCollection<Player>(
+    `rooms/${roomId}/players`
+  );
+  const { data: draftPicks, isLoading: areDraftPicksLoading } = useCollection<DraftPick>(
+    `rooms/${roomId}/draftPicks`
+  );
+  const { data: votes } = useCollection<Vote>(`rooms/${roomId}/votes`);
+
+  const isLoading = isRoomLoading || arePlayersLoading || areDraftPicksLoading;
+
+  const isMyTurn = room?.currentPlayerId === user?.uid;
+  const isSinglePlayer = room?.playerCount === 1;
+
+  const playerCrews = useMemo(() => {
+    const crews: Record<
+      string,
+      Record<Role, DraftedCharacterState | null>
+    > = {};
+
+    players.forEach((p) => {
+      crews[p.id] = Object.fromEntries(ROLES.map((r) => [r, null])) as Record<
+        Role,
+        null
+      >;
+    });
+
+    draftPicks.forEach((pick) => {
+      if (crews[pick.playerId] && pick.role) {
+        crews[pick.playerId][pick.role as Role] = {
+          id: pick.id,
+          info: {
+            id: 0,
+            name: pick.characterName,
+            description: pick.characterDescription,
+            imageHint: pick.characterName,
+          },
+          imageUrl: pick.characterImageUrl,
+          role: pick.role as Role,
+          playerId: pick.playerId,
+        };
+      }
+    });
+
+    return crews;
+  }, [players, draftPicks]);
+
+  const myCrew = useMemo(
+    () => (user ? playerCrews[user.uid] : null),
+    [playerCrews, user]
+  );
+  const otherPlayers = useMemo(
+    () => players.filter((p) => p.id !== user?.uid),
+    [players, user]
+  );
+
+  const allCrewsFull = useMemo(() => {
+    if (Object.keys(playerCrews).length === 0 || players.length === 0)
+      return false;
+    if (players.length !== room?.playerCount) return false;
+
+    return Object.values(playerCrews).every(
+      (crew) => crew && Object.values(crew).every((member) => member !== null)
+    );
+  }, [playerCrews, players, room?.playerCount]);
+
+  useEffect(() => {
+    if (room?.status === 'voting') {
+      setPhase('voting');
+    } else if (room?.status === 'finished') {
+      setPhase('result');
+    } else if (allCrewsFull && room?.status === 'drafting') {
+      const newStatus = isSinglePlayer ? 'finished' : 'voting';
+      if (newStatus !== room?.status) {
+        // To prevent multiple writes, only host updates status
+        if (user?.uid === room.hostId) {
+          updateRoomStatus(roomId, newStatus);
+        }
+      }
+      setPhase(newStatus);
+    }
+  }, [allCrewsFull, room, isSinglePlayer, user, roomId]);
+
 
   const initializePool = async () => {
     const fetchedChars = await fetchAllCharacters();
     setAllCharacters(fetchedChars);
     setCharacterPool(generateCharacterPool(fetchedChars, 100));
   };
-  
+
   useEffect(() => {
     initializePool();
   }, []);
 
-  const crewIsFull = useMemo(
-    () => Object.values(myCrew).every((c) => c !== null),
-    [myCrew]
-  );
-
   const drawCharacter = async () => {
     if (characterPool.length === 0) {
-        toast({ title: "No more characters left in the pool!", variant: "destructive" });
-        return;
+      toast({
+        title: 'No more characters left in the pool!',
+        variant: 'destructive',
+      });
+      return;
     }
     const newPool = [...characterPool];
     const draftIndex = Math.floor(Math.random() * newPool.length);
     const character = newPool.splice(draftIndex, 1)[0];
     setCharacterPool(newPool);
-    
+
     const imageUrl = await getCharImage(character.name);
-    
-    setDraftedCharacter({ info: character, imageUrl });
-  }
+    if(!user) return;
+    setDraftedCharacter({ id: 'new-draft', info: character, imageUrl, role: 'Captain' /* placeholder */, playerId: user.uid});
+  };
 
   const handleDraft = () => {
-    if (draftedCharacter || crewIsFull || characterPool.length === 0) return;
+    if (draftedCharacter || !isMyTurn) return;
     drawCharacter();
   };
 
-  const handleReroll = () => {
-    if (hasRerolled || !draftedCharacter) return;
-    setHasRerolled(true);
-    toast({
-      title: "Re-rolled!",
-      description: "You got a new character.",
-    });
+  const handleReroll = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!draftedCharacter || !isMyTurn) return;
     drawCharacter();
-  }
-
-  const handleRandomizeCrew = async () => {
-    if (crewIsFull) return;
-    
-    const needed = ROLES.length;
-    if (characterPool.length < needed) {
-        toast({ title: "Not enough characters in the pool to create a full crew!", variant: "destructive" });
-        return;
-    }
-
-    toast({ title: "Assembling a random crew..." });
-
-    let newPool = [...characterPool];
-    const selectedChars: Character[] = [];
-    for (let i = 0; i < needed; i++) {
-        const draftIndex = Math.floor(Math.random() * newPool.length);
-        selectedChars.push(newPool.splice(draftIndex, 1)[0]);
-    }
-    setCharacterPool(newPool);
-
-    const newCrewPromises = ROLES.map(async (role, index) => {
-        const charInfo = selectedChars[index];
-        const imageUrl = await getCharImage(charInfo.name);
-        return { role, state: { info: charInfo, imageUrl } };
-    });
-
-    const newCrewMembers = await Promise.all(newCrewPromises);
-
-    const finalCrew = Object.fromEntries(
-        newCrewMembers.map(item => [item.role, item.state])
-    ) as Record<Role, DraftedCharacterState>;
-
-    setMyCrew(finalCrew);
-    setDraftedCharacter(null); // Clear any drafted character
-    toast({ title: "Random crew assembled!", description: "You can make one swap before finalizing." });
-  }
-  
-  useEffect(() => {
-    if (crewIsFull && phase === "drafting") {
-      setPhase("swapping");
-    }
-  }, [crewIsFull, phase]);
-
-  const handleSubmitRating = (rating: number[]) => {
-    const score = (rating[0] + (Math.random() * 3 + 7)) / 2;
-    setFinalScore(score);
-    setPhase("result");
   };
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast({
-      title: "Room Link Copied!",
-      description: "Invite others to join your room.",
-    });
+  const handleImageError = (characterName: string) => {
+    setImageErrors((prev) => ({ ...prev, [characterName]: true }));
+  };
+
+  const assignCharacterToRole = async (role: Role) => {
+    if (!draftedCharacter || !room || !user || !room.turnOrder) return;
+
+    await selectCharacterForPlayer(
+      roomId,
+      user.uid,
+      role,
+      draftedCharacter.info.name,
+      draftedCharacter.info.description,
+      draftedCharacter.imageUrl,
+      room.turnOrder,
+      room.playerCount
+    );
+
+    setDraftedCharacter(null);
+    setMobileCharSelected(false);
   };
 
   const handlePlayAgain = () => {
-    setPhase("drafting");
-    initializePool();
-    setDraftedCharacter(null);
-    setMyCrew(Object.fromEntries(ROLES.map(r => [r, null])) as Record<Role, DraftedCharacterState | null>);
-    setFinalScore(0);
-    setSwappingCharacterRole(null);
-    setIsSwapMode(false);
-    setHasSwapped(false);
-    setHasRerolled(false);
-    setImageErrors({});
-    setMobileCharSelected(false);
-    setIsCapturing(false);
-    setCrewForCertificate(null);
-  }
-
-  const handleSwapClick = (role: Role) => {
-    if (!isSwapMode || hasSwapped || !myCrew[role]) return;
-
-    if (!swappingCharacterRole) {
-      // Start the swap
-      setSwappingCharacterRole(role);
-      toast({
-        title: 'Select a crew member to swap with',
-        description: `You selected ${myCrew[role]?.info.name}.`,
-      });
-    } else if (swappingCharacterRole === role) {
-      // Cancel the swap
-      setSwappingCharacterRole(null);
-      toast({
-        title: 'Swap canceled',
-      });
-    } else {
-      // Perform the swap
-      const sourceCharacter = myCrew[swappingCharacterRole];
-      const targetCharacter = myCrew[role];
-  
-      const newCrew = { ...myCrew };
-      newCrew[swappingCharacterRole] = targetCharacter;
-      newCrew[role] = sourceCharacter;
-  
-      setMyCrew(newCrew);
-      setSwappingCharacterRole(null);
-      setHasSwapped(true);
-      setIsSwapMode(false); // Exit swap mode after a successful swap
-      toast({
-          title: "Swap Successful!",
-          description: `${sourceCharacter?.info.name} and ${targetCharacter?.info.name} have swapped roles.`,
-      });
-    }
+    router.push('/');
   };
 
-  const toggleSwapMode = () => {
-    if (hasSwapped) {
-        toast({ title: "You've already made a swap this round.", variant: "destructive" });
-        return;
-    }
-    if (phase !== 'swapping') return;
+  const { voters, hasVoted } = useMemo(() => {
+    if (!votes) return { voters: new Set(), hasVoted: false };
+    const voterIds = new Set(votes.map(v => v.voterId));
+    return {
+      voters: voterIds,
+      hasVoted: user ? voterIds.has(user.uid) : false,
+    };
+  }, [votes, user]);
 
-    const newSwapMode = !isSwapMode;
-    setIsSwapMode(newSwapMode);
-    setSwappingCharacterRole(null); // Reset selection when toggling mode
-    if (newSwapMode) {
-        toast({ title: "Swap Mode Activated", description: "Select two crew members to swap their roles." });
-    } else {
-        toast({ title: "Swap Mode Deactivated" });
-    }
-  }
+  const handleSubmitVotes = async () => {
+    if (!user || !room || hasVoted) return;
 
-  const handleFinish = () => {
-    setPhase('voting');
-  }
-  
-  const handleImageError = (characterName: string) => {
-    setImageErrors(prev => ({ ...prev, [characterName]: true }));
-  }
+    const votesToSubmit: Omit<Vote, 'id'>[] = otherPlayers.map((p) => ({
+      voterId: user.uid,
+      targetPlayerId: p.id,
+      score: playerRatings[p.id] ?? 5,
+    }));
+
+    // Add self-vote for single player mode to progress
+    if (isSinglePlayer) {
+      votesToSubmit.push({
+        voterId: user.uid,
+        targetPlayerId: user.uid,
+        score: playerRatings[user.uid] ?? 10,
+      });
+    }
+
+    if (votesToSubmit.length === 0 && !isSinglePlayer) {
+      toast({
+        title: 'No ratings submitted.',
+        description: 'Please rate at least one crew.',
+      });
+      return;
+    }
+
+    await submitVotes(roomId, votesToSubmit, room.playerCount, voters.size + 1);
+  };
+
+  const finalScores = useMemo(() => {
+    if (phase !== 'result') return {};
+    const scores: Record<
+      string,
+      { total: number; count: number; avg: number }
+    > = {};
+
+    players.forEach((p) => {
+      scores[p.id] = { total: 0, count: 0, avg: 0 };
+    });
+
+    votes.forEach((vote) => {
+      if (scores[vote.targetPlayerId] && vote.voterId !== vote.targetPlayerId) {
+        scores[vote.targetPlayerId].total += vote.score;
+        scores[vote.targetPlayerId].count += 1;
+      }
+    });
+
+    for (const playerId in scores) {
+      if (scores[playerId].count > 0) {
+        scores[playerId].avg = scores[playerId].total / scores[playerId].count;
+      }
+    }
+
+    return scores;
+  }, [phase, votes, players]);
+
+  const sortedPlayers = useMemo(() => {
+    if (phase !== 'result' || isSinglePlayer) return players;
+
+    const playersToSort = [...players];
+
+    playersToSort.sort((a, b) => {
+      const scoreA = finalScores[a.id]?.avg ?? 0;
+      const scoreB = finalScores[b.id]?.avg ?? 0;
+      return scoreB - scoreA;
+    });
+
+    return playersToSort;
+  }, [phase, players, finalScores, isSinglePlayer]);
 
   const handleSaveCrew = async () => {
-    toast({ title: 'Generating your crew certificate...' });
-
-    const crewWithDataUris: CrewWithDataUri = { ...myCrew };
-    const promises = ROLES.map(async (role) => {
-        const member = myCrew[role];
-        if (member) {
-            const dataUri = await getBase64Image(member.imageUrl);
-            crewWithDataUris[role] = { ...member, dataUri: dataUri || member.imageUrl };
-        }
-    });
-    
-    await Promise.all(promises);
-    setCrewForCertificate(crewWithDataUris);
-    setIsCapturing(true); 
-  };
-  
-  useEffect(() => {
-    if (isCapturing && crewForCertificate) {
-      const certificateNode = document.getElementById('crew-certificate-capture');
-      if (!certificateNode) {
-        toast({ title: 'Error preparing certificate.', variant: 'destructive' });
-        setIsCapturing(false);
-        setCrewForCertificate(null);
-        return;
-      }
-  
-      const capture = async () => {
-         try {
-            const dataUrl = await toPng(certificateNode, {
-              quality: 1.0,
-              pixelRatio: 2,
-              width: certificateNode.clientWidth,
-              height: certificateNode.clientHeight,
-            });
-      
-            const link = document.createElement('a');
-            link.href = dataUrl;
-            link.download = `beat-my-crew-${roomId}.png`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-      
-            toast({ title: 'Crew saved!', description: 'Your crew certificate has been downloaded.' });
-          } catch (error) {
-            console.error('Error generating canvas:', error);
-            toast({ title: 'Could not save image', description: 'There was an error creating your certificate.', variant: 'destructive' });
-          } finally {
-            setIsCapturing(false);
-            setCrewForCertificate(null);
-          }
-      };
-
-      const timer = setTimeout(capture, 500);
-
-      return () => clearTimeout(timer);
-    }
-  }, [isCapturing, crewForCertificate, roomId, toast]);
-  
-
-  // --- Drag and Drop / Mobile Tap Handlers ---
-  const handleMobileDraftedCharClick = () => {
-    if (!isMobile || !draftedCharacter) return;
-    setMobileCharSelected(true);
+    if (!myCrew) return;
+    setIsSaving(true);
     toast({
-      title: `${draftedCharacter.info.name} selected!`,
-      description: 'Tap an empty role slot to assign them.',
+      title: 'Generating your certificate...',
+      description: 'Please wait a moment.',
     });
-  }
+
+    const crewWithImages: CrewWithDataUri = { ...myCrew } as CrewWithDataUri;
+
+    for (const role of ROLES) {
+      const member = myCrew[role];
+      if (member) {
+        const dataUri = await getBase64Image(member.imageUrl);
+        crewWithImages[role] = { ...member, dataUri: dataUri };
+      }
+    }
+    setCrewForCertificate(crewWithImages);
+
+    setTimeout(async () => {
+      const element = document.getElementById('crew-certificate-capture');
+      if (element) {
+        try {
+          const dataUrl = await toPng(element, {
+            cacheBust: true,
+            pixelRatio: 1.5,
+          });
+          const link = document.createElement('a');
+          link.download = 'my-one-piece-crew.png';
+          link.href = dataUrl;
+          link.click();
+          toast({
+            title: 'Certificate saved!',
+            description: 'Your crew certificate has been downloaded.',
+          });
+        } catch (err) {
+          console.error('oops, something went wrong!', err);
+          toast({
+            title: 'Error saving certificate',
+            description: 'Could not generate the image.',
+            variant: 'destructive',
+          });
+        } finally {
+          setCrewForCertificate(null);
+          setIsSaving(false);
+        }
+      }
+    }, 500); // Small delay to ensure images render
+  };
+
+  const handleMobileDraftedCharClick = () => {
+    if (!isMobile || !draftedCharacter || !isMyTurn) return;
+    setMobileCharSelected(!mobileCharSelected);
+    if (!mobileCharSelected) {
+      toast({
+        title: `${draftedCharacter.info.name} selected!`,
+        description: 'Tap an empty role slot to assign them.',
+      });
+    }
+  };
 
   const handleMobileSlotClick = (role: Role) => {
-    if (!isMobile || !mobileCharSelected || myCrew[role] || !draftedCharacter) return;
-    setMyCrew(prev => ({ ...prev, [role]: draftedCharacter }));
-    setDraftedCharacter(null);
-    setHasRerolled(false);
-    setMobileCharSelected(false);
+    if (
+      !isMobile ||
+      !draftedCharacter ||
+      !isMyTurn ||
+      (myCrew && myCrew[role])
+    )
+      return;
+    assignCharacterToRole(role);
+  };
+  
+  const handleRandomizeCrew = async () => {
+      if (!isSinglePlayer || !user) return;
+      const crewCharacters = Object.values(myCrew || {}).filter(Boolean).map(m => m!.info.name);
+      
+      const availablePool = await Promise.all(
+        characterPool
+          .filter(c => !crewCharacters.includes(c.name))
+          .map(async c => ({ ...c, imageUrl: await getCharImage(c.name) }))
+      );
+
+      await randomizeCrew(roomId, user.uid, availablePool, myCrew || {});
   }
 
-  const handleDragStart = (e: DragEvent<HTMLDivElement>) => {
-    if (isMobile || !draftedCharacter) return;
-    e.dataTransfer.setData("application/json", JSON.stringify(draftedCharacter));
+  // --- Drag and Drop Logic ---
+  const handleDragStart = (e: React.DragEvent, character: DraftedCharacterState) => {
+    if (character.playerId !== user?.uid) {
+        e.preventDefault();
+        return;
+    }
+    e.dataTransfer.setData('application/json', JSON.stringify(character));
+    e.currentTarget.classList.add('opacity-50');
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.currentTarget.classList.add('bg-accent/20');
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.currentTarget.classList.remove('bg-accent/20');
   };
   
-  const handleDrop = (e: DragEvent<HTMLDivElement>, role: Role) => {
+  const handleDrop = (e: React.DragEvent, targetRole: Role) => {
     e.preventDefault();
-    if (isMobile || myCrew[role]) return; 
+    e.currentTarget.classList.remove('bg-accent/20');
+    e.currentTarget.closest('[draggable]')?.classList.remove('opacity-50');
     
-    const characterData = e.dataTransfer.getData("application/json");
-    if (characterData) {
-      const character = JSON.parse(characterData) as DraftedCharacterState;
-      setMyCrew(prev => ({ ...prev, [role]: character }));
-      setDraftedCharacter(null);
-      setHasRerolled(false);
+    const draggedCharString = e.dataTransfer.getData('application/json');
+    if (!draggedCharString || !myCrew) return;
+    
+    const draggedChar: DraftedCharacterState = JSON.parse(draggedCharString);
+
+    // Don't do anything if dropping on the same role
+    if(draggedChar.role === targetRole) return;
+    
+    const targetChar = myCrew[targetRole];
+
+    // If dropping on an empty slot, it's an assignment, not a swap.
+    if (!targetChar) {
+        if (draggedChar.id === 'new-draft' && draftedCharacter) {
+             assignCharacterToRole(targetRole);
+        }
+        return;
     }
-    setIsDraggingOver(null);
+
+    // Perform the swap
+    swapCharacterRoles(roomId, draggedChar.id, draggedChar.role, targetChar.id, targetChar.role);
   };
   
-  const handleDragOver = (e: DragEvent<HTMLDivElement>, role: Role) => {
-    e.preventDefault();
-    if (!isMobile && !myCrew[role]) {
-      setIsDraggingOver(role);
-    }
-  };
-  
-  const handleDragLeave = () => {
-    if (!isMobile) {
-      setIsDraggingOver(null);
-    }
-  };
-  // --- End Handlers ---
+  const handleDragEnd = (e: React.DragEvent) => {
+    e.currentTarget.classList.remove('opacity-50');
+  }
 
 
-  const renderCrewMemberSlot = (role: Role, isVotingPhase: boolean = false) => {
-    const crewMember = myCrew[role];
-    const Icon = roleIcons[role];
+  const renderCrewMemberSlot = (
+    crewMember: DraftedCharacterState | null,
+    role: Role,
+    isMySlot: boolean
+  ) => {
+    const isAssignable = !crewMember && draftedCharacter && isMyTurn;
+    const isMobileAssignable = isMobile && isAssignable;
+    
+    const isOwner = crewMember?.playerId === user?.uid;
 
-    const isSwapSource = swappingCharacterRole === role;
-    const canBeSwapTarget = isSwapMode && !hasSwapped && crewMember !== null;
-    const isMobileAssignable = isMobile && mobileCharSelected && !crewMember;
+    const slotContent = (
+      <>
+        {crewMember ? (
+          <WantedPosterCard
+            character={crewMember}
+            onImageError={() => handleImageError(crewMember.info.name)}
+            hasError={imageErrors[crewMember.info.name]}
+          />
+        ) : (
+          <div
+            className={cn(
+              'w-full h-full flex items-center justify-center relative overflow-hidden bg-black/20 border-2 border-dashed border-white/20 rounded-lg p-2 text-white/40 text-3xl font-bold',
+              isAssignable && 'cursor-pointer'
+            )}
+          >
+            ?
+          </div>
+        )}
+      </>
+    );
 
     return (
-      <div 
-        key={role} 
-        className="flex flex-col items-center gap-2"
-        onDrop={(e) => handleDrop(e, role)}
-        onDragOver={(e) => handleDragOver(e, role)}
-        onDragLeave={handleDragLeave}
-        onClick={() => handleMobileSlotClick(role)}
+      <div
+        key={role}
+        className="flex flex-col items-center gap-1 w-full relative"
+        onClick={() =>
+          isMySlot &&
+          (isMobileAssignable
+            ? handleMobileSlotClick(role)
+            : isAssignable && assignCharacterToRole(role))
+        }
+        onDragOver={isOwner ? handleDragOver : undefined}
+        onDragLeave={isOwner ? handleDragLeave : undefined}
+        onDrop={(e) => isOwner ? handleDrop(e, role) : undefined}
       >
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Icon className="w-5 h-5" />
-          <h4 className="font-semibold text-sm">{role}</h4>
-        </div>
         <div
-          className={cn(
-            "w-[160px] h-[250px] relative transition-all duration-200",
-            {
-              'bg-primary/20 ring-2 ring-primary rounded-lg': isDraggingOver === role || isMobileAssignable
-            }
-          )}
+          draggable={isOwner && !!crewMember}
+          onDragStart={(e) => crewMember && isOwner && handleDragStart(e, crewMember)}
+          onDragEnd={handleDragEnd}
+          className={cn('w-full h-48 md:h-56 relative transition-all duration-200', {
+            'ring-2 ring-accent ring-offset-2 ring-offset-background rounded-lg':
+              isMobileAssignable && mobileCharSelected,
+            'hover:scale-105 hover:shadow-lg hover:ring-2 hover:ring-accent':
+              isAssignable && !isMobile,
+             'cursor-grab active:cursor-grabbing': isOwner && crewMember
+          })}
         >
-          {crewMember ? (
-            <WantedPosterCard 
-              character={crewMember}
-              onImageError={() => handleImageError(crewMember.info.name)}
-              hasError={!!imageErrors[crewMember.info.name]}
-              isSwapSource={isSwapSource}
-              canBeSwapTarget={canBeSwapTarget}
-              onClick={() => handleSwapClick(role)}
-            />
-          ) : (
-             <div className={cn(
-                "w-full h-full flex items-center justify-center relative overflow-hidden bg-card/50 group border-2 border-dashed border-yellow-800/40 p-2 text-muted-foreground text-4xl font-bold",
-                isMobileAssignable && "cursor-pointer"
-             )}>
-              ?
-             </div>
-          )}
+          {slotContent}
+        </div>
+        <div className="flex items-center gap-1.5 text-white/70 -mt-1">
+          {React.createElement(roleIcons[role], { className: 'w-3 h-3' })}
+          <span className="font-semibold text-xs">{role}</span>
         </div>
       </div>
     );
   };
 
-  return (
-    <div className="flex flex-col gap-4 h-full p-4">
-      <div className="w-full flex justify-start">
-        <Button variant="outline" asChild>
-            <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" />Back to Home</Link>
-        </Button>
+  if (isLoading || !user || !myCrew) {
+    return (
+      <div className="flex items-center justify-center h-screen text-white text-xl">
+        Loading your crew...
       </div>
+    );
+  }
 
-      {(phase === "drafting" || phase === "swapping") && (
-        <div className="flex-grow flex flex-col gap-4 items-center">
-          <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
-            {/* Left Column: Drafting */}
-            <div className="md:col-span-1 flex flex-col gap-4">
-              <Card className="flex-grow flex flex-col animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
-                <CardHeader>
-                  <CardTitle>DRAFTING ARENA</CardTitle>
-                  <CardDescription>
-                    Remaining in Pool: {characterPool.length}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow flex flex-col items-center justify-center gap-4 text-center">
-                  <div 
-                    className={cn(
-                        "w-64 h-96 transition-all", 
-                        draftedCharacter && (isMobile ? 'cursor-pointer' : 'cursor-grab'),
-                        mobileCharSelected && "ring-2 ring-accent ring-offset-2 ring-offset-background rounded-lg"
-                    )}
-                    draggable={!isMobile && !!draftedCharacter}
-                    onDragStart={handleDragStart}
-                    onClick={handleMobileDraftedCharClick}
-                  >
-                    {draftedCharacter ? (
-                       <div className="w-full h-full relative group">
-                          <Image
-                              src={draftedCharacter.imageUrl}
-                              alt={draftedCharacter.info.name}
-                              fill
-                              className={cn(
-                              "object-cover rounded-lg border-2 border-yellow-700/50",
-                              draftedCharacter.imageUrl.includes('bmc_logo.png') ? "object-contain p-4" : "object-top"
-                              )}
-                              sizes="256px"
-                          />
-                          <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2 text-center rounded-b-lg">
-                              <h3 className="font-bold text-lg">{draftedCharacter.info.name}</h3>
-                          </div>
-                       </div>
-                    ) : (
-                      <div className="w-full h-full border-2 border-dashed border-muted-foreground/50 rounded-lg flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                        {crewIsFull ? (
-                           <>
-                              <Users size={48} />
-                              <p className="text-center text-sm mt-2">Your crew is full!</p>
-                           </>
-                        ) : (
-                          <>
-                             <Users size={48} />
-                             <p className="text-center text-sm mt-2">Click draft to reveal a character</p>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <Button onClick={handleDraft} disabled={!!draftedCharacter || crewIsFull} size="lg">
-                    Draft Character
-                  </Button>
-                </CardContent>
-              </Card>
+  return (
+    <div className="w-full h-screen">
+      {phase === 'drafting' && (
+        <div className="flex flex-col md:flex-row h-full">
+          <div className="flex-shrink-0 w-full md:w-80 bg-black/30 backdrop-blur-sm border-r border-white/20 p-4 flex flex-col items-center justify-center gap-4">
+            <div className="text-center">
+              <h2 className="font-headline text-3xl text-white [text-shadow:_0_1px_10px_rgb(0_0_0_/_50%)]">
+                {isMyTurn ? 'Your Turn!' : 'Waiting...'}
+              </h2>
+              <p className="text-white/70">
+                {isMyTurn
+                  ? 'Draft a character for your crew.'
+                  : 'Waiting for other players to draft.'}
+              </p>
             </div>
 
-            {/* Right Column: Crew Roster */}
-            <div className="md:col-span-2">
-              <Card className="h-full animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
-                <CardHeader>
-                  <CardTitle>Your Crew Roster</CardTitle>
-                   <CardDescription>
-                    {
-                      phase === 'drafting' ? (isMobile ? 'Tap your drafted character, then tap an empty slot.' : 'Drag your drafted character into an empty slot.') : 
-                      phase === 'swapping' ? (
-                          isSwapMode
-                              ? swappingCharacterRole
-                                  ? `Select a crew member to swap with ${myCrew[swappingCharacterRole]?.info.name}.`
-                                  : 'Select the first crew member to swap.'
-                              : hasSwapped 
-                                  ? "Your swap has been made for this round." 
-                                  : "Your crew is assembled. You can make one swap."
-                      ) : 'Your masterpiece!'
+            <div
+              className={cn(
+                'w-56 h-80 transition-all',
+                draftedCharacter && isMyTurn && isMobile && 'cursor-pointer'
+              )}
+              onClick={handleMobileDraftedCharClick}
+              onDrop={(e) => {
+                 const draggedCharString = e.dataTransfer.getData('application/json');
+                 if(draggedCharString) {
+                    setDraftedCharacter(JSON.parse(draggedCharString));
+                 }
+              }}
+              onDragOver={handleDragOver}
+            >
+              {draftedCharacter ? (
+                <div
+                  className={cn('w-full h-full', {
+                    'ring-2 ring-accent ring-offset-2 ring-offset-background rounded-lg':
+                      mobileCharSelected,
+                  })}
+                  draggable={isMyTurn}
+                   onDragStart={(e) => draftedCharacter && handleDragStart(e, draftedCharacter)}
+                >
+                  <WantedPosterCard
+                    character={draftedCharacter}
+                    onImageError={() =>
+                      handleImageError(draftedCharacter.info.name)
                     }
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-6">
-                    {ROLES.map(role => renderCrewMemberSlot(role, false))}
-                </CardContent>
-              </Card>
+                    hasError={imageErrors[draftedCharacter.info.name]}
+                  />
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full h-full bg-black/20 border-white/20 border-dashed text-white/60 hover:bg-black/30 hover:text-white"
+                  onClick={handleDraft}
+                  disabled={!isMyTurn}
+                >
+                  <Dices className="mr-2 h-5 w-5" />
+                  Draft Character
+                </Button>
+              )}
+            </div>
+
+            <div className="text-center space-y-2">
+              <div className="flex gap-2 justify-center flex-wrap">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReroll}
+                  disabled={!draftedCharacter || !isMyTurn}
+                >
+                  <Dices className="mr-2 h-4 w-4" />
+                  Re-roll
+                </Button>
+                {isSinglePlayer && (
+                    <Button variant="outline" size="sm" onClick={handleRandomizeCrew}>
+                        <Shuffle className="mr-2 h-4 w-4" />
+                        Randomize Crew
+                    </Button>
+                )}
+              </div>
             </div>
           </div>
-          
-          {/* Actions Toolbar */}
-          <Card className="w-full max-w-4xl animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
-              <CardHeader>
-                  <CardTitle>Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col md:flex-row items-center justify-center gap-4">
-                  <Button variant="outline" onClick={handleReroll} disabled={hasRerolled || !draftedCharacter}>
-                      <Dices className="mr-2 h-4 w-4" />
-                      Re-roll
-                  </Button>
-                  <Button variant="outline" onClick={handleRandomizeCrew} disabled={crewIsFull}>
-                        <Dices className="mr-2 h-4 w-4" />
-                        Randomize Team
-                    </Button>
-                  <Button variant="outline" onClick={toggleSwapMode} disabled={!crewIsFull || phase !== 'swapping' || hasSwapped}>
-                      <Replace className="mr-2 h-4 w-4" />
-                      {isSwapMode ? 'Cancel Swap' : 'Swap Roles'}
-                  </Button>
 
-                  {phase === "swapping" && (
-                      <Button onClick={handleFinish} size="lg" disabled={isSwapMode} className="flex-grow">
-                          Finish and Proceed to Voting
-                      </Button>
-                  )}
-              </CardContent>
-          </Card>
+          <div className="flex-1 p-4 md:p-8 overflow-y-auto">
+            <div className="w-full max-w-7xl mx-auto">
+              <div className="space-y-8">
+                {players.map((player) => (
+                  <div key={player.id}>
+                    <h3 className="text-2xl font-headline mb-4 text-white/90">
+                      {player.displayName} {player.id === user.uid && '(You)'}
+                    </h3>
+                    <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
+                      {ROLES.map((role) =>
+                        renderCrewMemberSlot(
+                          playerCrews[player.id]?.[role] || null,
+                          role,
+                          player.id === user.uid
+                        )
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
-      {(phase === "voting" || phase === "result") && (
-         <Card className="w-full max-w-5xl mx-auto animate-map-open bg-card/80 backdrop-blur-sm border-white/20">
-            <CardHeader className="text-center">
-                <CardTitle className="text-3xl font-headline">
-                {phase === 'voting' ? "Rate Your Masterpiece" : "Final Verdict"}
-                </CardTitle>
-                <CardDescription>
-                {phase === 'voting' ? "Your crew is assembled! How powerful do they seem?" : `Your crew has been rated!`}
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-                    {ROLES.map(role => renderCrewMemberSlot(role, true))}
+      {(phase === 'voting' || phase === 'result') && (
+        <div className="w-full h-full flex flex-col items-center justify-center p-4">
+          <div className="w-full h-full animate-map-open bg-black/30 backdrop-blur-sm border-white/20 rounded-lg p-4 md:p-8 overflow-y-auto">
+            <div className="text-center mb-8">
+              <h1 className="text-3xl md:text-5xl font-headline text-white [text-shadow:_0_1px_10px_rgb(0_0_0_/_50%)]">
+                {phase === 'voting' ? 'Rate Their Crews!' : isSinglePlayer ? 'Your Assembled Crew' : 'Final Standings'}
+              </h1>
+              <p className="text-white/70 mt-2">
+                {phase === 'voting' ? 'Vote on which crew you think is the strongest.' : isSinglePlayer ? "You've assembled your crew! Save it or try again." : "The results are in! Here's how the crews stacked up."}
+              </p>
+            </div>
+
+            {phase === 'voting' && (
+               <div className="space-y-8">
+               {otherPlayers.map((player) => (
+                   <div
+                     key={player!.id}
+                     className="p-4 rounded-lg bg-black/20 border border-white/10"
+                   >
+                     <h3 className="font-headline text-2xl mb-4 text-white/90">
+                       {`${player!.displayName}'s Crew`}
+                     </h3>
+                     <div className="grid grid-cols-4 md:grid-cols-8 gap-4 mb-6">
+                       {ROLES.map((role) => {
+                         const crewMember = playerCrews[player!.id]?.[role];
+                         return (
+                           <div
+                             key={role}
+                             className="flex flex-col items-center gap-1 text-center"
+                           >
+                             <div className="w-[80px] h-[140px] relative">
+                               {crewMember ? (
+                                  <WantedPosterCard character={crewMember} onImageError={() => handleImageError(crewMember.info.name)} hasError={imageErrors[crewMember.info.name]}/>
+                               ) : (
+                                 <div className="w-full h-full flex items-center justify-center bg-black/20 border-2 border-dashed border-white/20 p-2 text-white/40 text-xl font-bold">
+                                   ?
+                                 </div>
+                               )}
+                             </div>
+                             <div className="flex items-center gap-1.5 text-white/70 -mt-1">
+                               {React.createElement(roleIcons[role], {
+                                 className: 'w-2 h-2',
+                               })}
+                               <span className="font-semibold text-[10px]">
+                                 {role}
+                               </span>
+                             </div>
+                           </div>
+                         );
+                       })}
+                     </div>
+                     <div className="flex items-center gap-4 max-w-md mx-auto">
+                       <span className="text-white font-bold">1</span>
+                       <Slider
+                         defaultValue={[5]}
+                         min={1}
+                         max={10}
+                         step={1}
+                         onValueChange={([value]) =>
+                           setPlayerRatings((prev) => ({
+                             ...prev,
+                             [player!.id]: value,
+                           }))
+                         }
+                       />
+                       <span className="text-white font-bold">10</span>
+                     </div>
+                   </div>
+                 ))}
+             </div>
+            )}
+
+            {phase === 'result' && (
+                <div className="space-y-6">
+                  {sortedPlayers.map((player, index) => {
+                      const score = finalScores[player.id]?.avg ?? 0;
+                      const threatLevel = getThreatLevel(score);
+                      return (
+                      <div
+                        key={player.id}
+                        className="p-4 rounded-lg bg-black/20 border border-white/10 flex flex-col md:flex-row gap-6 items-center"
+                      >
+                         {!isSinglePlayer && (
+                            <div className="flex items-center gap-4">
+                              <span className="text-4xl font-bold font-headline text-yellow-500 w-12 text-center">
+                                #{index + 1}
+                              </span>
+                              <div className="text-center border-r px-4 border-yellow-800/30">
+                                <p className="text-5xl font-bold font-headline text-white">
+                                  {score.toFixed(1)}
+                                </p>
+                                <p className="text-sm text-white/60">Avg. Score</p>
+                              </div>
+                               <div className="text-center">
+                                <p className={cn("text-3xl font-bold font-headline", threatLevel.color)}>
+                                    {threatLevel.name}
+                                </p>
+                                <p className="text-sm text-white/60">Threat Level</p>
+                               </div>
+                            </div>
+                        )}
+                        <div className="flex-1">
+                          <h3 className="text-xl font-headline mb-4 text-white/90">
+                            {player.displayName}'s Crew {player.id === user.id && '(You)'}
+                          </h3>
+                          <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
+                            {ROLES.map((role) => {
+                              const crewMember = playerCrews[player.id]?.[role] || null;
+                              return (
+                                <div
+                                  key={role}
+                                  className="flex flex-col items-center gap-1 text-center"
+                                >
+                                  <div className="w-[80px] h-[140px] relative">
+                                    {crewMember ? (
+                                       <WantedPosterCard character={crewMember} onImageError={() => handleImageError(crewMember.info.name)} hasError={imageErrors[crewMember.info.name]}/>
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center bg-black/20 border-2 border-dashed border-white/20 p-2 text-white/40 text-xl font-bold">
+                                        ?
+                                      </div>
+                                    )}
+                                  </div>
+                                   <div className="flex items-center gap-1.5 text-white/70 -mt-1">
+                                        {React.createElement(roleIcons[role], {
+                                        className: 'w-2 h-2',
+                                        })}
+                                        <span className="font-semibold text-[10px]">
+                                        {role}
+                                        </span>
+                                    </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                      )
+                    }
+                  )}
                 </div>
+            )}
+            
+            <div className="text-center mt-8 space-y-2">
+              {phase === 'voting' && !isSinglePlayer && (
+                <>
+                  <Button onClick={handleSubmitVotes} size="lg" disabled={hasVoted}>
+                    {hasVoted ? 'Votes Submitted' : 'Submit Votes'}
+                  </Button>
+                  <p className="text-sm text-white/60">
+                    ({voters.size}/{players.length} players have voted)
+                  </p>
+                </>
+              )}
+              {phase === 'result' && (
+                 <>
+                  <Button onClick={handleSaveCrew} disabled={isSaving}>
+                    <Download className="mr-2 h-4 w-4" />
+                    {isSaving ? 'Saving...' : 'Save My Crew'}
+                  </Button>
+                  <Button variant="secondary" onClick={handlePlayAgain}>
+                    <RotateCw className="mr-2 h-4 w-4" />
+                    Play Again
+                  </Button>
+                </>
+              )}
+            </div>
 
-                {phase === 'voting' && (
-                  <div className="flex flex-col items-center gap-4">
-                      <Slider defaultValue={[5]} max={10} step={1} className="max-w-md" onValueCommit={handleSubmitRating} />
-                      <p className="text-sm text-muted-foreground">Slide to submit your rating from 1 to 10</p>
-                  </div>
-                )}
-
-                {phase === 'result' && (
-                    <div className="text-center flex flex-col items-center gap-4 animate-in fade-in duration-500">
-                        <div className="flex items-center gap-4">
-                            <Star className="text-accent w-10 h-10" fill="currentColor" />
-                            <p className="text-6xl font-bold font-headline">{finalScore.toFixed(1)}</p>
-                            <Star className="text-accent w-10 h-10" fill="currentColor" />
-                        </div>
-                        <p className="text-lg text-muted-foreground">An impressive score!</p>
-                        <div className="flex items-center gap-4 mt-4">
-                            <Button onClick={handlePlayAgain} size="lg">
-                                <RotateCw className="mr-2 h-4 w-4" />
-                                Assemble a New Crew
-                            </Button>
-                            <Button onClick={handleSaveCrew} size="lg" variant="outline" disabled={isCapturing}>
-                                <Download className="mr-2 h-4 w-4" />
-                                {isCapturing ? 'Saving...' : 'Save Crew'}
-                            </Button>
-                        </div>
-                    </div>
-                )}
-            </CardContent>
-         </Card>
+          </div>
+        </div>
       )}
 
-    {isCapturing && crewForCertificate && (
-       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-          <CrewCertificate 
-            id="crew-certificate-capture"
-            crew={crewForCertificate} 
-            roomId={roomId}
-            isForCapture={true}
-          />
-       </div>
-    )}
+      {crewForCertificate && (
+        <CrewCertificate
+          id="crew-certificate-capture"
+          roomId={roomId}
+          crew={crewForCertificate}
+          isForCapture={!!crewForCertificate}
+        />
+      )}
     </div>
   );
 }

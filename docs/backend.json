@@ -1,0 +1,133 @@
+
+{
+  "entities": {
+    "user": {
+      "title": "User",
+      "description": "Represents a user in the system.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The user's unique ID."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "URL of the user's profile picture."
+        }
+      },
+      "required": ["uid", "displayName"]
+    },
+    "room": {
+      "title": "Room",
+      "description": "Represents a game lobby.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The unique ID of the room."
+        },
+        "hostId": {
+          "type": "string",
+          "description": "The UID of the user who created the room."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["lobby", "drafting", "voting", "finished"],
+          "description": "The current status of the room."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of when the room was created."
+        },
+        "currentPlayerId": {
+            "type": "string",
+            "description": "The UID of the player whose turn it is."
+        },
+        "turnOrder": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "An array of player UIDs in the order of their turns."
+        },
+        "playerCount": {
+          "type": "number",
+          "description": "The number of players for the game (1, 2, or 4)."
+        }
+      },
+      "required": ["id", "hostId", "status", "createdAt", "playerCount"]
+    },
+    "player": {
+        "title": "Player",
+        "description": "Represents a player within a room.",
+        "type": "object",
+        "properties": {
+            "uid": {
+                "type": "string"
+            },
+            "displayName": {
+                "type": "string"
+            }
+        },
+        "required": ["uid", "displayName"]
+    },
+    "draftPick": {
+        "title": "Draft Pick",
+        "description": "Represents a character drafted by a player for a specific role.",
+        "type": "object",
+        "properties": {
+            "playerId": { "type": "string" },
+            "role": { "type": "string" },
+            "characterName": { "type": "string" },
+            "characterDescription": { "type": "string" },
+            "characterImageUrl": { "type": "string" }
+        },
+        "required": ["playerId", "role", "characterName", "characterImageUrl", "characterDescription"]
+    },
+    "vote": {
+      "title": "Vote",
+      "description": "Represents a vote cast by one player for another player's crew.",
+      "type": "object",
+      "properties": {
+        "voterId": { "type": "string" },
+        "targetPlayerId": { "type": "string" },
+        "score": { "type": "number" }
+      },
+      "required": ["voterId", "targetPlayerId", "score"]
+    }
+  },
+  "auth": {
+    "providers": ["anonymous"]
+  },
+  "firestore": {
+    "/rooms/{roomId}": {
+      "schema": {
+        "$ref": "#/entities/room"
+      },
+      "description": "Collection of game rooms."
+    },
+    "/rooms/{roomId}/players/{playerId}": {
+      "schema": {
+        "$ref": "#/entities/player"
+      },
+      "description": "Sub-collection of players in a room."
+    },
+    "/rooms/{roomId}/draftPicks/{draftPickId}": {
+        "schema": {
+            "$ref": "#/entities/draftPick"
+        },
+        "description": "Sub-collection for drafted characters by players in a room."
+    },
+    "/rooms/{roomId}/votes/{voteId}": {
+      "schema": {
+        "$ref": "#/entities/vote"
+      },
+      "description": "Sub-collection for votes cast by players."
+    }
+  }
+}

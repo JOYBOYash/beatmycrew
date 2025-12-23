@@ -1,0 +1,81 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Check if the user is a player in the current room.
+    function isPlayer(roomId) {
+      return exists(/databases/$(database)/documents/rooms/$(roomId)/players/$(request.auth.uid));
+    }
+    
+    function isMyTurn(roomId) {
+        return get(/databases/$(database)/documents/rooms/$(roomId)).data.currentPlayerId == request.auth.uid;
+    }
+
+    match /rooms/{roomId} {
+      // Any signed-in user can create a room.
+      allow create: if isSignedIn();
+
+      // Any signed-in user can view a room's details.
+      allow get: if isSignedIn();
+
+      // Any player in the room can update the room.
+      allow update: if isSignedIn() && isPlayer(roomId);
+      
+      // Rooms cannot be deleted.
+      allow delete: if false;
+
+      match /players/{playerId} {
+        // A user can only join a room (create a player document) for themselves.
+        allow create: if isSignedIn() && request.auth.uid == playerId;
+
+        // All signed-in users can see the list of players in a room.
+        allow list, get: if isSignedIn();
+
+        // Player documents cannot be changed or removed.
+        allow update, delete: if false;
+      }
+
+      match /draftPicks/{draftPickId} {
+        // Allow creating a pick if it's the player's turn OR it's a single-player game (for randomization).
+        allow create: if isSignedIn() &&
+                      request.resource.data.playerId == request.auth.uid &&
+                      (
+                        isMyTurn(roomId) ||
+                        get(/databases/$(database)/documents/rooms/$(roomId)).data.playerCount == 1
+                      );
+
+        // Any player in the room can read draft picks.
+        allow get, list: if isSignedIn() && isPlayer(roomId);
+
+        // A player can only update their own draft picks. This is needed for role swapping.
+        allow update: if isSignedIn() &&
+                      get(/databases/$(database)/documents/rooms/$(roomId)/draftPicks/$(draftPickId)).data.playerId == request.auth.uid;
+
+        // Picks cannot be deleted.
+        allow delete: if false;
+      }
+      
+      match /votes/{voteId} {
+        // A player can vote for others in multiplayer, or for themselves in single-player.
+        allow create: if isSignedIn() && isPlayer(roomId) &&
+                      request.resource.data.voterId == request.auth.uid &&
+                      (
+                        request.resource.data.targetPlayerId != request.auth.uid || 
+                        get(/databases/$(database)/documents/rooms/$(roomId)).data.playerCount == 1
+                      );
+
+        // Any player in the room can see all votes.
+        allow list, get: if isSignedIn() && isPlayer(roomId);
+
+        // Votes cannot be updated or deleted.
+        allow update, delete: if false;
+      }
+    }
+  }
+}

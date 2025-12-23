@@ -4,6 +4,7 @@ import characters from './characters.json';
 export type Character = {
   id: number;
   name: string;
+  description: string;
   imageHint: string;
 };
 
@@ -22,6 +23,7 @@ const shuffleArray = <T>(array: T[]): T[] => {
 type ApiCharacter = {
     id: number;
     name: string;
+    description?: string;
     [key: string]: any;
 }
 
@@ -32,6 +34,7 @@ export const fetchAllCharacters = async (): Promise<Character[]> => {
         return chars.map(char => ({
             id: char.id,
             name: char.name,
+            description: char.description || "A mysterious figure from the world of One Piece.",
             imageHint: char.name, 
         }));
     } catch (error) {

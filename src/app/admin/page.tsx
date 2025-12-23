@@ -79,30 +79,27 @@ export default function AdminPage() {
   return (
     <main className="container mx-auto py-8 px-4">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-3xl font-headline">Image Alias Management</h1>
+        <h1 className="text-3xl font-headline text-white [text-shadow:_0_1px_10px_rgb(0_0_0_/_50%)]">Image Alias Management</h1>
         <Button variant="outline" asChild>
           <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" />Back to App</Link>
         </Button>
       </div>
-      <p className="text-muted-foreground mb-8">
+      <p className="text-white/80 mb-8 [text-shadow:_0_1px_10px_rgb(0_0_0_/_50%)]">
         Use this page to correct image loading issues by providing the correct Fandom wiki name for characters.
       </p>
 
-      <Card className="animate-map-open bg-[url(/map_bg.jpg)] bg-cover bg-center border-yellow-800/60">
-        <CardHeader>
-          <div className="flex justify-between items-center">
+      <div className="animate-map-open bg-black/30 backdrop-blur-sm p-4 md:p-6 rounded-xl border border-white/20">
+        <div className="flex justify-between items-center mb-6">
             <div>
-                <CardTitle>Reported Image Issues</CardTitle>
-                <CardDescription>
+                <h2 className='font-headline text-2xl text-white [text-shadow:_0_1px_10px_rgb(0_0_0_/_50%)]'>Reported Image Issues</h2>
+                <p className="text-white/70">
                 The following characters were flagged for having image loading problems.
-                </CardDescription>
+                </p>
             </div>
             <Button variant="destructive" onClick={handleClearAll} disabled={reportedIssues.length === 0}>
                 Clear All Reports
             </Button>
           </div>
-        </CardHeader>
-        <CardContent>
           {reportedIssues.length > 0 ? (
             <div className="space-y-6">
               {reportedIssues.map(name => (
@@ -115,13 +112,13 @@ export default function AdminPage() {
                     className="flex flex-col sm:flex-row items-end gap-4"
                   >
                     <div className="grid gap-2 flex-1 w-full">
-                      <Label htmlFor={`name-${name}`} className="font-semibold">
+                      <Label htmlFor={`name-${name}`} className="font-semibold text-white/80">
                         Original Name
                       </Label>
-                      <Input id={`name-${name}`} value={name} disabled />
+                      <Input id={`name-${name}`} value={name} disabled className="bg-black/20 border-white/10 text-white/90" />
                     </div>
                     <div className="grid gap-2 flex-1 w-full">
-                      <Label htmlFor={`alias-${name}`} className="font-semibold">
+                      <Label htmlFor={`alias-${name}`} className="font-semibold text-white/80">
                         Correct Fandom Name (Alias)
                       </Label>
                       <Input
@@ -129,21 +126,21 @@ export default function AdminPage() {
                         placeholder="e.g., Karoo"
                         value={aliases[name] || ''}
                         onChange={(e) => handleAliasChange(name, e.target.value)}
+                         className="bg-black/20 border-white/10 text-white placeholder:text-white/40"
                       />
                     </div>
                     <Button type="submit">Save Alias</Button>
                   </form>
-                  <Separator className="mt-6" />
+                  <Separator className="mt-6 bg-white/20" />
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-muted-foreground text-center py-8">
+            <p className="text-white/60 text-center py-8">
               No image issues reported yet.
             </p>
           )}
-        </CardContent>
-      </Card>
+      </div>
     </main>
   );
 }

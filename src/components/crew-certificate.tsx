@@ -37,18 +37,20 @@ type CrewCertificateProps = {
   isForCapture: boolean;
 };
 
+type MemberCardProps = {
+  member: (DraftedCharacterState & {dataUri?: string | null}) | null;
+  role: Role;
+  isForCapture: boolean;
+}
+
 const MemberCard = ({
   member,
   role,
   isForCapture,
-}: {
-  member: (DraftedCharacterState & {dataUri?: string | null}) | null;
-  role: Role;
-  isForCapture: boolean;
-}) => {
+}: MemberCardProps) => {
   const Icon = roleIcons[role];
   const imgSrc =
-    (isForCapture ? member?.dataUri : member?.imageUrl) || '/bmc_logo.png';
+    (isForCapture ? member?.dataUri : member?.imageUrl);
 
   return (
     <div className="bg-[url(/card_bg.png)] bg-cover bg-center rounded-lg p-2 flex flex-col items-center shadow-md w-40">
@@ -56,7 +58,7 @@ const MemberCard = ({
         WANTED
       </h3>
       <div className="w-full h-32 relative mt-1 rounded-sm overflow-hidden border-2 border-yellow-800/20">
-        {member ? (
+        {member && imgSrc ? (
           <Image
             src={imgSrc}
             alt={member.info.name}
@@ -94,9 +96,7 @@ export default function CrewCertificate({
       className={cn(
         'p-8 font-sans bg-[url(/rating_bg.png)] bg-cover bg-center',
         'w-[1200px] h-[630px] overflow-hidden flex flex-col',
-        isForCapture
-          ? 'fixed top-0 left-0 z-50'
-          : 'absolute left-[-9999px] top-[-9999px] -z-50'
+        !isForCapture ? 'absolute left-[-9999px] top-[-9999px] -z-50' : ''
       )}
     >
       <div className="relative z-10 flex flex-col h-full">
