@@ -1,25 +1,20 @@
 
-import { NodeNextRequest } from "next/dist/server/base-http/node";
 import Image from "next/image";
 import Link from "next/link";
 
 export default function Home() {
   return (
-    <main
-      className="relative min-h-screen w-full bg-cover bg-center flex items-center justify-center"
-    
-    >
+    <main className="relative flex min-h-screen w-full flex-col items-center justify-center p-4 overflow-hidden">
       {/* Top Right Title */}
-      <div
-        className="absolute bottom-[650px] right-[-800px] bg-no-repeat"
-        style={{
-          width: 2000,
-          height: 250,
-          transform: "scale(0.5)",
-          backgroundImage: "url('/main-logo.png')",
-        }}
-      />
-
+      <div className="absolute top-10 right-10">
+        <Image
+          src="/main-logo.png"
+          alt="Beat My Crew Title"
+          width={450}
+          height={100}
+          priority
+        />
+      </div>
 
       {/* Main Content Wrapper */}
       <div className="relative w-[900px] max-w-[95%]">
@@ -71,8 +66,8 @@ export default function Home() {
 
           <p className="text-[#9c6d43] text-2xl font-bold leading-relaxed max-w-xl">
             RANDOMLY PICK YOUR CREWMATES FROM THE HUGE WORLD OF ONE-PIECE,
-            ASSIGN THEM KEY ROLES AND COMPARE/PIT THEM AGAINST YOUR FRIEND&apos;S CREW. <br/>
-            SEE WHO&apos;S GOT THE BEST CREW!
+            ASSIGN THEM KEY ROLES AND COMPARE/PIT THEM AGAINST YOUR FRIEND'S CREW. <br/>
+            SEE WHO'S GOT THE BEST CREW!
           </p>
 
           {/* Why */}
@@ -92,7 +87,7 @@ export default function Home() {
           </p>
 
           {/* Join Fight Button */}
-          <Link href="/build" className="top-16 relative mt-10">
+          <Link href="/build" className="relative mt-10">
             <Image
               src="/head.png"
               alt="Join Fight"
@@ -100,10 +95,10 @@ export default function Home() {
               height={70}
             />
             <span
-              className="absolute  inset-0 flex items-center font-bold justify-center text-xl"
+              className="absolute inset-0 flex items-center font-bold justify-center text-xl"
               style={{
                 background:
-                  "linear-gradient(180deg, #b7341d 0%, #762112 50%, #5a1a0f 100%)",
+                  "linear-gradient(180deg, #ffd3a5, #6b451e, #472a0d)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
               }}
@@ -120,20 +115,17 @@ export default function Home() {
           src="/logo-colored.png"
           alt="App Logo"
           width={400}
-          
           height={250}
         />
       </div>
 
       {/* Bottom Right Credit */}
-      <div className="absolute bottom-6 font-bold right-[170px] text-sm">
+      <div className="absolute bottom-6 right-10 text-sm font-bold">
         <span
           style={{
-            color: "#ffd3a5",
-            background:
-            "linear-gradient(180deg, #b7341d 0%, #762112 50%, #5a1a0f 100%)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
+            background: "linear-gradient(180deg, #ffd3a5, #6b451e, #472a0d)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
           }}
         >
           CREATED BY JOYBOY

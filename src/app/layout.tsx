@@ -42,9 +42,9 @@ export default function RootLayout({
         />
       </head>
       <body className={cn("font-body antialiased min-h-screen")}
-        style={{
-          backgroundImage: "url('/map_bg.jpg')",
-        }}
+      style={{
+     backgroundImage: "url('/map_bg.jpg')",
+      }}
       >
         <FirebaseClientProvider>
           <UserProvider>
