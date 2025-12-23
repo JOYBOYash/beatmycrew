@@ -87,6 +87,13 @@ const addReportedIssue = (characterName: string) => {
   }
 };
 
+const getThreatLevel = (score: number) => {
+    if (score > 8) return { name: 'Yonko', color: 'text-red-400' };
+    if (score > 6) return { name: 'Warlord', color: 'text-purple-400' };
+    if (score > 3) return { name: 'Supernova', color: 'text-blue-400' };
+    return { name: 'Rookie', color: 'text-green-400' };
+};
+
 const WantedPosterCard = ({
   character,
   onImageError,
@@ -811,7 +818,10 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
             {phase === 'result' && (
                 <div className="space-y-6">
-                  {sortedPlayers.map((player, index) => (
+                  {sortedPlayers.map((player, index) => {
+                      const score = finalScores[player.id]?.avg ?? 0;
+                      const threatLevel = getThreatLevel(score);
+                      return (
                       <div
                         key={player.id}
                         className="p-4 rounded-lg bg-black/20 border border-white/10 flex flex-col md:flex-row gap-6 items-center"
@@ -821,12 +831,18 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                               <span className="text-4xl font-bold font-headline text-yellow-500 w-12 text-center">
                                 #{index + 1}
                               </span>
-                              <div className="text-center border-r pr-4 border-yellow-800/30">
+                              <div className="text-center border-r px-4 border-yellow-800/30">
                                 <p className="text-5xl font-bold font-headline text-white">
-                                  {(finalScores[player.id]?.avg ?? 0).toFixed(1)}
+                                  {score.toFixed(1)}
                                 </p>
                                 <p className="text-sm text-white/60">Avg. Score</p>
                               </div>
+                               <div className="text-center">
+                                <p className={cn("text-3xl font-bold font-headline", threatLevel.color)}>
+                                    {threatLevel.name}
+                                </p>
+                                <p className="text-sm text-white/60">Threat Level</p>
+                               </div>
                             </div>
                         )}
                         <div className="flex-1">
@@ -864,7 +880,8 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                           </div>
                         </div>
                       </div>
-                    )
+                      )
+                    }
                   )}
                 </div>
             )}
