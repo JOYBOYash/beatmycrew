@@ -695,7 +695,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
                     <div className='text-center'>
                          <h2 className="font-bold text-2xl text-[#b7341d]">
-                           {!allCrewsFull ? (isMyTurn ? 'YOUR TURN!' : `${room?.players.find(p => p.id === room.currentPlayerId)?.displayName || 'Player'}'s Turn`) : 'SWAP ROLES'}
+                           {!allCrewsFull ? (isMyTurn ? 'YOUR TURN!' : `${players.find(p => p.id === room.currentPlayerId)?.displayName || 'Player'}'s Turn`) : 'SWAP ROLES'}
                         </h2>
                         <p className="text-[#9c6d43] font-bold">
                             {!allCrewsFull ? (isMyTurn ? 'DRAFT A CHARACTER TO YOUR CREW' : 'Waiting for opponent...') : 'Your crew is full! Swap roles or finish drafting.'}
