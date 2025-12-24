@@ -811,7 +811,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 }
               `}
             </style>
-            <div className="relative w-[1400px] max-w-[95%] h-[800px]">
+            <div className="relative w-[1600px] max-w-[95%] h-[900px]">
                 <Image src="/section.png" alt="Parchment" fill objectFit="contain" />
                 <div className="absolute inset-0 flex flex-col items-center py-10 px-20">
                      <div className="relative mb-8">
@@ -821,7 +821,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                         </h1>
                     </div>
                     
-                    <div className="w-full space-y-12">
+                    <div className="w-full space-y-12 overflow-y-auto">
                         {otherPlayers.map((player) => {
                              const rating = playerRatings[player!.id] ?? 5;
                              const threatLevel = getThreatLevel(rating);
@@ -871,6 +871,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                                         step={0.5}
                                         onValueChange={([value]) => setPlayerRatings((prev) => ({...prev, [player!.id]: value, }))}
                                         className="w-full voting-slider"
+                                        disabled={hasVoted}
                                     />
                                     <span className="font-bold text-lg text-[#9c6d43]">10</span>
                                 </div>
