@@ -46,6 +46,7 @@ import {
   Vote,
   updateRoomStatus,
 } from '@/lib/rooms';
+import BackButton from './BackButton';
 
 type GamePhase = 'drafting' | 'voting' | 'result';
 
@@ -676,7 +677,8 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   }
 
   return (
-    <div className="w-full h-screen p-4 sm:p-6 lg:p-8 overflow-hidden">
+    <div className="w-full h-screen p-4 sm:p-6 lg:p-8 overflow-hidden relative">
+      <BackButton />
       {phase === 'drafting' && (
         <main className="w-full h-full flex flex-col">
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
@@ -935,6 +937,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                                 <div className="grid grid-cols-8 gap-4 mb-4">
                                     {ROLES.map((role) => {
                                         const crewMember = playerCrews[player!.id]?.[role];
+                                        const RoleIcon = roleIcons[role];
                                         return (
                                         <div key={role} className="w-full h-[140px] relative">
                                             {crewMember ? (

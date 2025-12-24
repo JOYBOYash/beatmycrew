@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import BackButton from '@/components/BackButton';
 
 export default function LobbyPage({ params }: { params: Promise<{ roomId: string }> }) {
   const { roomId } = use(params);
@@ -76,6 +77,7 @@ export default function LobbyPage({ params }: { params: Promise<{ roomId: string
 
   return (
     <main className="relative flex min-h-screen w-full flex-col items-center justify-center p-4 overflow-hidden">
+        <BackButton />
         {/* Top Title */}
       <div className="absolute top-10">
         <Image

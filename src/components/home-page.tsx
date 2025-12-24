@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -9,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { createRoom, joinRoom } from "@/lib/rooms";
 import { useUser } from "@/firebase";
 import Image from "next/image";
+import BackButton from "./BackButton";
 
 export default function HomePage() {
   const [roomCode, setRoomCode] = useState("");
@@ -91,6 +91,7 @@ export default function HomePage() {
 
   return (
      <div className="relative flex min-h-screen w-full flex-col items-center justify-center p-4 overflow-hidden">
+       <BackButton />
         {/* Top Title */}
       <div className="absolute top-10">
         <Image

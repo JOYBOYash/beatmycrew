@@ -11,6 +11,7 @@ import { updateAlias } from './actions';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import BackButton from '@/components/BackButton';
 
 const getReportedIssues = (): string[] => {
   if (typeof window === 'undefined') return [];
@@ -77,12 +78,10 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="container mx-auto py-8 px-4">
+    <main className="container mx-auto py-8 px-4 relative">
+        <BackButton />
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-3xl font-headline text-white [text-shadow:_0_1px_10px_rgb(0_0_0_/_50%)]">Image Alias Management</h1>
-        <Button variant="outline" asChild>
-          <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" />Back to App</Link>
-        </Button>
       </div>
       <p className="text-white/80 mb-8 [text-shadow:_0_1px_10px_rgb(0_0_0_/_50%)]">
         Use this page to correct image loading issues by providing the correct Fandom wiki name for characters.
