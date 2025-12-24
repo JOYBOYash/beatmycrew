@@ -825,7 +825,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 }
               `}
             </style>
-            <div className="relative w-[1400px] max-w-[95%] h-[800px]">
+            <div className="relative w-[1500px] max-w-[95%] h-[850px]">
                 <Image src="/section.png" alt="Parchment" fill objectFit="contain" />
                 <div className="absolute inset-0 flex flex-col items-center py-10 px-20">
                      <div className="relative mb-8">
@@ -835,7 +835,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                         </h1>
                     </div>
                     
-                    <div className="w-full flex-1 space-y-12 overflow-y-auto">
+                    <div className="w-full flex-1 space-y-12 overflow-y-auto px-10">
                         {otherPlayers.map((player) => {
                              const rating = playerRatings[player!.id] ?? 5;
                              const threatLevel = getThreatLevel(rating);
@@ -917,8 +917,8 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
       {phase === 'result' && (
         <main className="relative flex min-h-screen w-full flex-col items-center justify-center p-4 overflow-hidden">
-             <div className="relative w-[1400px] max-w-[95%]">
-                <Image src="/section.png" alt="Parchment" width={1400} height={800} className="w-full h-auto" />
+             <div className="relative w-[1600px] h-[900px] max-w-[95%]">
+                <Image src="/section.png" alt="Parchment" width={1600} height={1000} className="w-full h-auto" />
                 <div className="absolute inset-0 flex flex-col items-center py-10 px-20">
                     <div className="relative mb-8">
                         <Image src="/head.png" alt="Crew Levels" width={300} height={80} />
@@ -927,7 +927,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                         </h1>
                     </div>
                     
-                    <div className="w-full flex-1 space-y-8 overflow-y-auto">
+                    <div className="w-full flex-1 space-y-8 overflow-y-auto px-8">
                         {sortedPlayers.map((player) => {
                             const score = finalScores[player.id]?.avg ?? 0;
                             const threatLevel = getThreatLevel(score);
