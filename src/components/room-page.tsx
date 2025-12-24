@@ -919,7 +919,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
         <main className="relative flex min-h-screen w-full flex-col items-center justify-center p-4 overflow-hidden">
              <div className="relative w-[1600px] h-[900px] max-w-[95%]">
                 <Image src="/section.png" alt="Parchment" width={1600} height={1000} className="w-full h-auto" />
-                <div className="absolute inset-0 flex flex-col items-center py-10 px-20">
+                <div className="absolute inset-0 flex flex-col items-center py-12 px-34">
                     <div className="relative mb-8">
                         <Image src="/head.png" alt="Crew Levels" width={300} height={80} />
                         <h1 className="absolute inset-0 flex items-center justify-center text-3xl font-bold" style={{background: "linear-gradient(180deg, #b7341d, #762112, #5a1a0f)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
@@ -927,7 +927,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                         </h1>
                     </div>
                     
-                    <div className="w-full flex-1 space-y-8 overflow-y-auto px-8">
+                    <div className="w-full flex-1 space-y-8 overflow-y-auto px-12">
                         {sortedPlayers.map((player) => {
                             const score = finalScores[player.id]?.avg ?? 0;
                             const threatLevel = getThreatLevel(score);
