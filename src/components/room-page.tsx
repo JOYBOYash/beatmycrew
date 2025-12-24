@@ -894,98 +894,88 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       )}
 
       {phase === 'result' && (
-        <div className="w-full h-full flex flex-col items-center justify-center p-4">
-          <div className="w-full h-full animate-map-open bg-black/30 backdrop-blur-sm border-white/20 rounded-lg p-4 md:p-8 overflow-y-auto">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl md:text-5xl font-headline text-white [text-shadow:_0_1px_10px_rgb(0_0_0_/_50%)]">
-                {isSinglePlayer ? 'Your Assembled Crew' : 'Final Standings'}
-              </h1>
-              <p className="text-white/70 mt-2">
-                {isSinglePlayer ? "You've assembled your crew! Save it or try again." : "The results are in! Here's how the crews stacked up."}
-              </p>
-            </div>
-
-            <div className="space-y-6">
-              {sortedPlayers.map((player, index) => {
-                  const score = finalScores[player.id]?.avg ?? 0;
-                  const threatLevel = getThreatLevel(score);
-                  return (
-                  <div
-                    key={player.id}
-                    className="p-4 rounded-lg bg-black/20 border border-white/10 flex flex-col md:flex-row gap-6 items-center"
-                  >
-                     {!isSinglePlayer && (
-                        <div className="flex items-center gap-4">
-                          <span className="text-4xl font-bold font-headline text-yellow-500 w-12 text-center">
-                            #{index + 1}
-                          </span>
-                          <div className="text-center border-r px-4 border-yellow-800/30">
-                            <p className="text-5xl font-bold font-headline text-white">
-                              {score.toFixed(1)}
-                            </p>
-                            <p className="text-sm text-white/60">Avg. Score</p>
-                          </div>
-                           <div className="text-center">
-                            <p className={cn("text-3xl font-bold font-headline", threatLevel.color)}>
-                                {threatLevel.name}
-                            </p>
-                            <p className="text-sm text-white/60">Threat Level</p>
-                           </div>
-                        </div>
-                    )}
-                    <div className="flex-1">
-                      <h3 className="text-xl font-headline mb-4 text-white/90">
-                        {player.displayName}'s Crew {player.id === user.id && '(You)'}
-                      </h3>
-                      <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
-                        {ROLES.map((role) => {
-                          const crewMember = playerCrews[player.id]?.[role] || null;
-                          const RoleIcon = roleIcons[role];
-                          return (
-                            <div
-                              key={role}
-                              className="flex flex-col items-center gap-1 text-center"
-                            >
-                              <div className="w-full h-[180px] relative">
-                                {crewMember ? (
-                                   <WantedPosterCard character={crewMember} onImageError={() => handleImageError(crewMember.info.name)} hasError={imageErrors[crewMember.info.name]}/>
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center bg-black/20 border-2 border-dashed border-white/20 p-2 text-white/40 text-xl font-bold">
-                                    ?
-                                  </div>
-                                )}
-                              </div>
-                               <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-white/70 mt-1">
-                                    <RoleIcon className="w-4 h-4" />
-                                    <span>{role}</span>
-                                </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+        <div className="relative w-full h-full flex flex-col items-center justify-center p-4">
+             <div className="relative w-[1500px] max-w-[95%] h-[900px]">
+                <Image src="/section.png" alt="Parchment" fill objectFit="contain" />
+                <div className="absolute inset-0 flex flex-col items-center py-12 px-24">
+                     <div className="relative mb-8">
+                        <Image src="/head.png" alt="Crew Levels" width={300} height={80} />
+                        <h1 className="absolute inset-0 flex items-center justify-center text-3xl font-bold" style={{background: "linear-gradient(180deg, #b7341d, #762112, #5a1a0f)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                            CREW LEVELS
+                        </h1>
                     </div>
-                  </div>
-                  )
-                }
-              )}
-            </div>
-            
-            <div className="text-center mt-8 space-y-2">
-              {phase === 'result' && (
-                 <>
-                  <Button onClick={handleSaveCrew} disabled={isSaving}>
-                    <Download className="mr-2 h-4 w-4" />
-                    {isSaving ? 'Saving...' : 'Save My Crew'}
-                  </Button>
-                  <Button variant="secondary" onClick={handlePlayAgain}>
-                    <RotateCw className="mr-2 h-4 w-4" />
-                    Play Again
-                  </Button>
-                </>
-              )}
-            </div>
+                    
+                    <div className="w-full space-y-12 overflow-y-auto pr-4">
+                        {sortedPlayers.map((player) => {
+                             const score = finalScores[player.id]?.avg ?? 0;
+                             const threatLevel = getThreatLevel(score);
+                            return (
+                           <div key={player!.id} className="w-full">
+                                <div className='flex items-center justify-between mb-4'>
+                                    <div className="relative">
+                                        <Image src="/head.png" alt="Crew Roster" width={240} height={60} />
+                                        <h3 className="absolute inset-0 flex items-center justify-center text-xl font-bold" style={{background: "linear-gradient(180deg, #ffd3a5, #6b451e, #472a0d)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                                            {`${player!.displayName}'s Roster`}
+                                        </h3>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className='flex items-center gap-2'>
+                                             <span className="text-[#9c6d43] font-bold text-sm">CREW LEVEL</span>
+                                             <Image className="rounded-[100px]" src="/tooltip-icon.png" alt="Tooltip" width={14} height={14} />
+                                        </div>
+                                        <div 
+                                          className='rounded-full px-4 py-1 text-white font-bold text-lg'
+                                          style={{background: "linear-gradient(180deg, #b7341d, #762112, #5a1a0f)"}}
+                                        >
+                                           {threatLevel.name.toUpperCase()}
+                                        </div>
+                                    </div>
+                                </div>
 
-          </div>
+                                <div className="grid grid-cols-8 gap-4 mb-4">
+                                    {ROLES.map((role) => {
+                                        const crewMember = playerCrews[player!.id]?.[role];
+                                        return (
+                                        <div key={role} className="w-full h-[140px] relative">
+                                            {crewMember ? (
+                                                <WantedPosterCard character={crewMember} onImageError={() => handleImageError(crewMember.info.name)} hasError={imageErrors[crewMember.info.name]}/>
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center bg-[#cba47e]/20 border-2 border-dashed border-[#9c6d43]/50 rounded-md text-[#9c6d43]/40 text-2xl font-bold">
+                                                ?
+                                                </div>
+                                            )}
+                                        </div>
+                                        );
+                                    })}
+                                </div>
+                           </div>
+                        )})}
+                    </div>
+                    
+                    <div className="absolute bottom-12 flex justify-center items-center gap-4">
+                      <button onClick={handleSaveCrew} disabled={isSaving} className="relative bg-transparent border-none p-0 w-[260px] h-[70px] disabled:opacity-50">
+                          <Image src="/head.png" alt="Save Crew" layout="fill" objectFit="contain"/>
+                          <span className="absolute inset-0 flex items-center font-bold justify-center text-xl" style={{ background: "linear-gradient(180deg, #ffd3a5, #6b451e, #472a0d)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                              <Download className="mr-2 h-5 w-5"/> {isSaving ? 'SAVING...' : 'SAVE YOUR CREW'}
+                          </span>
+                      </button>
+                      <button onClick={handlePlayAgain} className="relative bg-transparent border-none p-0 w-[260px] h-[70px] disabled:opacity-50">
+                          <Image src="/head.png" alt="Fight Again" layout="fill" objectFit="contain"/>
+                          <span className="absolute inset-0 flex items-center font-bold justify-center text-xl" style={{ background: "linear-gradient(180deg, #ffd3a5, #6b451e, #472a0d)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                              <RotateCw className="mr-2 h-5 w-5"/> FIGHT AGAIN
+                          </span>
+                      </button>
+                    </div>
+                </div>
+            </div>
+            <div className="absolute bottom-[-100px] left-[-100px] rotate-[-15deg] opacity-40">
+                <Image src="/logo-colored.png" alt="App Logo" width={300} height={185} />
+            </div>
+             <div className="absolute bottom-6 right-10 text-sm font-bold">
+                <span style={{ background: "linear-gradient(180deg, #ffd3a5, #6b451e, #472a0d)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                    CREATED BY JOYBOY
+                </span>
+            </div>
         </div>
       )}
 
