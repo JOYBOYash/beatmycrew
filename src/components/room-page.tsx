@@ -793,6 +793,17 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
       {phase === 'voting' && (
          <main className="relative flex min-h-screen w-full flex-col items-center justify-center p-4 overflow-hidden">
+            <style>
+              {`
+                .voting-slider [data-radix-collection-item] .bg-primary {
+                  background-color: #613525 !important;
+                }
+                .voting-slider [data-radix-collection-item] span[role="slider"] {
+                   border-color: #9c6d43 !important;
+                   background-color: #9c6d43 !important;
+                }
+              `}
+            </style>
             <div className="relative w-[1200px] max-w-[95%] h-[700px]">
                 <Image src="/section.png" alt="Parchment" fill objectFit="contain" />
                 <div className="absolute inset-0 flex flex-col items-center py-10 px-20">
@@ -822,8 +833,8 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                                              <Image className="rounded-[100px]" src="/tooltip-icon.png" alt="Tooltip" width={14} height={14} />
                                         </div>
                                         <div className='bg-[#cba47e] border-2 border-[#9c6d43] rounded-full px-4 py-1 flex items-center gap-2'>
-                                            <span className={cn('font-bold text-lg', threatLevel.color)}>{threatLevel.name}</span>
-                                            <span className='font-bold text-lg text-white'>{rating}</span>
+                                            <span className='font-bold text-lg' style={{ background: "linear-gradient(180deg, #b7341d, #762112, #5a1a0f)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{threatLevel.name}</span>
+                                            <span className='font-bold text-lg text-[#9c6d43]'>{rating.toFixed(1)}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -852,7 +863,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                                         max={10}
                                         step={0.5}
                                         onValueChange={([value]) => setPlayerRatings((prev) => ({...prev, [player!.id]: value, }))}
-                                        className="w-full"
+                                        className="w-full voting-slider"
                                     />
                                     <span className="font-bold text-lg text-[#9c6d43]">10</span>
                                 </div>
