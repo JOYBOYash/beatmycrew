@@ -835,7 +835,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                         </h1>
                     </div>
                     
-                    <div className="w-full space-y-12 overflow-y-auto">
+                    <div className="w-full flex-1 space-y-12 overflow-y-auto">
                         {otherPlayers.map((player) => {
                              const rating = playerRatings[player!.id] ?? 5;
                              const threatLevel = getThreatLevel(rating);
@@ -919,7 +919,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
         <main className="relative flex min-h-screen w-full flex-col items-center justify-center p-4 overflow-hidden">
              <div className="relative w-[1400px] max-w-[95%]">
                 <Image src="/section.png" alt="Parchment" width={1400} height={800} className="w-full h-auto" />
-                <div className="absolute inset-0 flex flex-col items-center py-10 px-20 overflow-y-auto">
+                <div className="absolute inset-0 flex flex-col items-center py-10 px-20">
                     <div className="relative mb-8">
                         <Image src="/head.png" alt="Crew Levels" width={300} height={80} />
                         <h1 className="absolute inset-0 flex items-center justify-center text-3xl font-bold" style={{background: "linear-gradient(180deg, #b7341d, #762112, #5a1a0f)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
@@ -927,7 +927,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                         </h1>
                     </div>
                     
-                    <div className="w-full space-y-8">
+                    <div className="w-full flex-1 space-y-8 overflow-y-auto">
                         {sortedPlayers.map((player) => {
                             const score = finalScores[player.id]?.avg ?? 0;
                             const threatLevel = getThreatLevel(score);
@@ -974,7 +974,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                         })}
                     </div>
                     
-                    <div className="flex items-center justify-center gap-6 mt-12">
+                    <div className="flex items-center justify-center gap-6 mt-auto pt-8">
                         <button onClick={handleSaveCrew} disabled={isSaving} className="relative bg-transparent border-none p-0 w-[260px] h-[70px] disabled:opacity-50">
                             <Image src="/head.png" alt="Save Crew" layout="fill" objectFit="contain"/>
                             <span className="absolute inset-0 flex items-center font-bold justify-center text-xl gap-2" style={{ background: "linear-gradient(180deg, #ffd3a5, #6b451e, #472a0d)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
