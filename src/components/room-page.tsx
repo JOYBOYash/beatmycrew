@@ -804,9 +804,9 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 }
               `}
             </style>
-            <div className="relative w-[1300px] max-w-[95%] h-[750px]">
+            <div className="relative w-[1500px] max-w-[95%] h-[900px]">
                 <Image src="/section.png" alt="Parchment" fill objectFit="contain" />
-                <div className="absolute inset-0 flex flex-col items-center py-10 px-20">
+                <div className="absolute inset-0 flex flex-col items-center py-12 px-24">
                      <div className="relative mb-8">
                         <Image src="/head.png" alt="Rate Crews" width={300} height={80} />
                         <h1 className="absolute inset-0 flex items-center justify-center text-3xl font-bold" style={{background: "linear-gradient(180deg, #b7341d, #762112, #5a1a0f)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
