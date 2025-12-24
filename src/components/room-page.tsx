@@ -160,11 +160,11 @@ const LargeWantedPoster = ({ character, onImageError, hasError, ...props }: { ch
     const showFallback = isApiFallback || hasError;
 
     return (
-        <div className="w-full h-[350px] bg-[url(/card_bg.png)] bg-cover bg-center p-4 flex flex-col items-center gap-1 shadow-lg" {...props}>
+        <div className="w-full h-full bg-[url(/card_bg.png)] bg-cover bg-center p-4 flex flex-col items-center gap-1 shadow-lg" {...props}>
              <h3 className="font-bold text-2xl tracking-wider text-[#7f5b3b]">
                 WANTED
             </h3>
-            <div className="w-full h-56 relative bg-black/10 border-4 border-[#b9936d]">
+            <div className="w-full flex-1 relative bg-black/10 border-4 border-[#b9936d] my-1">
                  <Image
                     src={showFallback ? '/bmc_logo.png' : character.imageUrl}
                     alt={character.info.name}
@@ -739,7 +739,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                         )}
                     </div>
 
-                     <div className="flex items-center justify-center gap-4 mt-auto">
+                    <div className="flex items-center justify-end gap-4 mt-auto w-full max-w-sm mx-auto">
                         <button 
                             onClick={handleReroll} 
                             disabled={!draftedCharacter || !isMyTurn} 
