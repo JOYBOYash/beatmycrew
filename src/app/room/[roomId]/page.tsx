@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser, useCollection, useDocument } from '@/firebase';
-import { Player, Room, setPlayerCount, startGame } from '@/lib/rooms';
+import { Player, Room, setPlayerCount, startGame, joinRoom } from '@/lib/rooms';
 import { useRouter } from 'next/navigation';
 import { useEffect, use } from 'react';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,21 @@ export default function LobbyPage({ params }: { params: Promise<{ roomId: string
     `rooms/${roomId}/players`
   );
   const { toast } = useToast();
+
+  useEffect(() => {
+    // If the user lands here but isn't a player yet, try to join them.
+    if (user && !isUserLoading && players.length > 0 && !players.find(p => p.id === user.uid)) {
+        const displayName = localStorage.getItem("beatmycrew_displayName") || undefined;
+        joinRoom(roomId, user, displayName).catch(err => {
+            toast({
+                title: "Could not join lobby",
+                description: err.message,
+                variant: 'destructive'
+            });
+            router.push('/build');
+        });
+    }
+  }, [user, isUserLoading, players, roomId, router, toast]);
 
   useEffect(() => {
     if (!isRoomLoading && room?.status === 'drafting') {
@@ -147,6 +162,7 @@ export default function LobbyPage({ params }: { params: Promise<{ roomId: string
                         'bg-[#cba47e] border-[#9c6d43] border-2 text-[#6b451e] font-bold text-lg h-12 w-28 rounded-full hover:bg-[#b9936d]',
                         room.playerCount === count ? 'bg-[#9c6d43] text-white' : ''
                       )}
+                      disabled={players.length > count}
                     >
                       <Users className="mr-2" /> {count}P
                     </Button>

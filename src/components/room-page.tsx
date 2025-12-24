@@ -285,7 +285,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   );
   
   const allCrewsFull = useMemo(() => {
-    if (players.length !== room?.playerCount) return false;
+    if (!room || players.length !== room?.playerCount) return false;
     return players.every(p => {
         const crew = playerCrews[p.id];
         return crew && ROLES.every(role => crew[role] !== null);
@@ -353,7 +353,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   
   const handleFinishDrafting = async () => {
     if (!room || !user ) return;
-    await finishDrafting(roomId);
+    await finishDrafting(roomId, user.uid);
   }
 
   const handleReroll = (e?: React.MouseEvent) => {
@@ -618,7 +618,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     role: Role,
     isMySlot: boolean
   ) => {
-    const isAssignable = !crewMember && draftedCharacter && isMyTurn;
+    const isAssignable = !crewMember && draftedCharacter && isMyTurn && !allCrewsFull;
     const isOwner = crewMember?.playerId === user?.uid;
     const RoleIcon = roleIcons[role];
 
@@ -665,6 +665,9 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       </div>
     );
   };
+  
+  const playersReadyCount = players.filter(p => p.isDraftingDone).length;
+  const IamReady = players.find(p => p.id === user?.uid)?.isDraftingDone ?? false;
 
   if (isLoading || !user || !myCrew) {
     return (
@@ -692,10 +695,10 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
                     <div className='text-center'>
                          <h2 className="font-bold text-2xl text-[#b7341d]">
-                           {isMyTurn ? 'YOUR TURN!' : `${room?.players.find(p => p.id === room.currentPlayerId)?.displayName || 'Player'}'s Turn`}
+                           {!allCrewsFull ? (isMyTurn ? 'YOUR TURN!' : `${room?.players.find(p => p.id === room.currentPlayerId)?.displayName || 'Player'}'s Turn`) : 'SWAP ROLES'}
                         </h2>
                         <p className="text-[#9c6d43] font-bold">
-                            {isMyTurn ? 'DRAFT A CHARACTER TO YOUR CREW' : 'Waiting for opponent...'}
+                            {!allCrewsFull ? (isMyTurn ? 'DRAFT A CHARACTER TO YOUR CREW' : 'Waiting for opponent...') : 'Your crew is full! Swap roles or finish drafting.'}
                         </p>
                     </div>
 
@@ -731,7 +734,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                              <button
                                 className="w-full h-full max-w-sm mx-auto bg-[#cba47e]/20 border-4 border-dashed border-[#9c6d43]/50 rounded-lg flex flex-col items-center justify-center text-[#9c6d43]/60 hover:bg-[#cba47e]/30 transition-colors"
                                 onClick={handleDraft}
-                                disabled={!isMyTurn}
+                                disabled={!isMyTurn || allCrewsFull}
                             >
                                 <Dices className="w-16 h-16" />
                                 <span className='font-bold text-xl mt-2'>DRAFT CHARACTER</span>
@@ -741,16 +744,22 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
                     <div className="flex items-center justify-between gap-4 mt-auto w-full max-w-sm mx-auto">
                         {allCrewsFull && (
-                             <button 
-                                onClick={handleFinishDrafting}
-                                className="flex items-center justify-center gap-2 rounded-full px-6 py-2 text-white font-bold text-lg shadow-lg hover:scale-105 transition-transform"
-                                style={{
-                                    background:
-                                    'linear-gradient(180deg, #b7341d 0%, #762112 50%, #5a1a0f 100%)',
-                                }}
-                            >
-                                <Check /> DRAFTING DONE
-                            </button>
+                            <div className='flex flex-col items-start gap-1'>
+                                <button 
+                                    onClick={handleFinishDrafting}
+                                    disabled={IamReady}
+                                    className="flex items-center justify-center gap-2 rounded-full px-4 py-2 text-white font-bold text-md shadow-lg hover:scale-105 transition-transform disabled:opacity-70 disabled:cursor-not-allowed disabled:scale-100"
+                                    style={{
+                                        background:
+                                        'linear-gradient(180deg, #b7341d 0%, #762112 50%, #5a1a0f 100%)',
+                                    }}
+                                >
+                                    <Check /> {IamReady ? 'WAITING FOR OTHERS' : 'DRAFTING DONE'}
+                                </button>
+                                <p className='text-xs text-[#9c6d43]/80 font-bold'>
+                                    {playersReadyCount}/{players.length} Players Ready
+                                </p>
+                             </div>
                         )}
                         <button 
                             onClick={handleReroll} 

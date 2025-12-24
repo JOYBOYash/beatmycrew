@@ -72,6 +72,10 @@
             },
             "displayName": {
                 "type": "string"
+            },
+            "isDraftingDone": {
+                "type": "boolean",
+                "description": "Indicates if the player has confirmed they are done drafting."
             }
         },
         "required": ["uid", "displayName"]

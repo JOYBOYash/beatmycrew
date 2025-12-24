@@ -38,8 +38,13 @@ service cloud.firestore {
         // All signed-in users can see the list of players in a room.
         allow list, get: if isSignedIn();
 
-        // Player documents cannot be changed or removed.
-        allow update, delete: if false;
+        // A player can only update their own document, and only the 'isDraftingDone' field.
+        allow update: if isSignedIn() && 
+                      request.auth.uid == playerId &&
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isDraftingDone']);
+
+        // Player documents cannot be removed.
+        allow delete: if false;
       }
 
       match /draftPicks/{draftPickId} {
