@@ -795,10 +795,10 @@ export default function RoomPage({ roomId }: { roomId: string }) {
          <main className="relative flex min-h-screen w-full flex-col items-center justify-center p-4 overflow-hidden">
             <style>
               {`
-                .voting-slider [data-radix-collection-item] .bg-primary {
+                .voting-slider .bg-primary {
                   background-color: #613525 !important;
                 }
-                .voting-slider [data-radix-collection-item] span[role="slider"] {
+                .voting-slider span[role="slider"] {
                    border-color: #9c6d43 !important;
                    background-color: #9c6d43 !important;
                 }
