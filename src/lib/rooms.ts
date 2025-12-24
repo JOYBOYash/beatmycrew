@@ -1,3 +1,4 @@
+
 'use client';
 
 import { getFirebaseConfig } from '@/firebase/config';
@@ -261,36 +262,37 @@ export async function finishDrafting(
   roomId: string,
   playerId: string,
 ) {
-  await runTransaction(db, async (transaction) => {
-      const roomRef = doc(db, 'rooms', roomId);
-      const playerRef = doc(db, `rooms/${roomId}/players`, playerId);
-      
-      // Mark the current player as done
-      transaction.update(playerRef, { isDraftingDone: true });
+    await runTransaction(db, async (transaction) => {
+        const roomRef = doc(db, 'rooms', roomId);
+        const playersCollectionRef = collection(db, `rooms/${roomId}/players`);
+        
+        // --- READS FIRST ---
+        const roomSnap = await transaction.get(roomRef);
+        if (!roomSnap.exists()) throw new Error("Room does not exist");
+        const room = roomSnap.data() as Room;
+        
+        const playersSnapshot = await getDocs(query(playersCollectionRef));
+        const allPlayers = playersSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Player));
 
-      // Check if all other players are also done
-      const roomSnap = await transaction.get(roomRef);
-      if (!roomSnap.exists()) throw new Error("Room does not exist");
-      const room = roomSnap.data() as Room;
+        // --- LOGIC ---
+        // Check if everyone else (excluding the current player) is already done
+        const otherPlayersDone = allPlayers
+            .filter(p => p.id !== playerId)
+            .every(p => p.isDraftingDone);
+        
+        const allPlayersCount = allPlayers.length;
 
-      const playersCollectionRef = collection(db, `rooms/${roomId}/players`);
-      const playersSnapshot = await getDocs(query(playersCollectionRef));
-      
-      const allPlayers = playersSnapshot.docs.map(doc => doc.data() as Player);
-      
-      // Update the current player's status in our local copy
-      const currentPlayerInList = allPlayers.find(p => p.id === playerId);
-      if(currentPlayerInList) {
-        currentPlayerInList.isDraftingDone = true;
-      }
-      
-      const allDone = allPlayers.every(p => p.isDraftingDone);
-      
-      if (allDone) {
-          const newStatus = room.playerCount === 1 ? 'finished' : 'voting';
-          transaction.update(roomRef, { status: newStatus });
-      }
-  }).catch((err) => {
+        // If everyone else is ready, this player's click will finish the phase
+        if (otherPlayersDone && allPlayersCount === room.playerCount) {
+            const newStatus = room.playerCount === 1 ? 'finished' : 'voting';
+            // --- WRITES LAST ---
+            transaction.update(roomRef, { status: newStatus });
+        }
+        
+        const playerRef = doc(db, `rooms/${roomId}/players`, playerId);
+        transaction.update(playerRef, { isDraftingDone: true });
+
+    }).catch((err) => {
       console.error("Finish drafting transaction failed: ", err);
        const permissionError = new FirestorePermissionError({
             path: `rooms/${roomId}/players/${playerId}`,
