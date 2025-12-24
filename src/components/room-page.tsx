@@ -734,11 +734,15 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                         )}
                     </div>
 
-                    <div className="flex items-center justify-end gap-4 mt-auto w-full max-w-sm mx-auto">
+                    <div className="flex items-center justify-between gap-4 mt-auto w-full max-w-sm mx-auto">
                         {myCrewIsFull && isMyTurn && (
                             <button 
                                 onClick={handleFinishDrafting}
-                                className="bg-green-600 border-2 border-green-800 text-white font-bold px-8 py-2 rounded-full hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-lg flex items-center gap-2"
+                                className="flex items-center justify-center gap-2 rounded-full px-6 py-2 text-white font-bold text-lg shadow-lg hover:scale-105 transition-transform"
+                                style={{
+                                    background:
+                                    'linear-gradient(180deg, #b7341d 0%, #762112 50%, #5a1a0f 100%)',
+                                }}
                             >
                                 <Check /> DRAFTING DONE
                             </button>
@@ -746,7 +750,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                         <button 
                             onClick={handleReroll} 
                             disabled={!draftedCharacter || !isMyTurn} 
-                            className="bg-[#cba47e] border-2 border-[#9c6d43] text-[#6b451e] font-bold px-8 py-2 rounded-full hover:bg-[#b9936d] disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+                            className="bg-[#cba47e] border-2 border-[#9c6d43] text-[#6b451e] font-bold px-8 py-2 rounded-full hover:bg-[#b9936d] disabled:opacity-50 disabled:cursor-not-allowed text-lg ml-auto"
                         >
                             RE-ROLL
                         </button>
@@ -807,9 +811,9 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 }
               `}
             </style>
-            <div className="relative w-[1500px] max-w-[95%] h-[900px]">
+            <div className="relative w-[1400px] max-w-[95%] h-[800px]">
                 <Image src="/section.png" alt="Parchment" fill objectFit="contain" />
-                <div className="absolute inset-0 flex flex-col items-center py-12 px-24">
+                <div className="absolute inset-0 flex flex-col items-center py-10 px-20">
                      <div className="relative mb-8">
                         <Image src="/head.png" alt="Rate Crews" width={300} height={80} />
                         <h1 className="absolute inset-0 flex items-center justify-center text-3xl font-bold" style={{background: "linear-gradient(180deg, #b7341d, #762112, #5a1a0f)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
