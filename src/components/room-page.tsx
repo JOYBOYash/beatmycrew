@@ -89,9 +89,9 @@ const addReportedIssue = (characterName: string) => {
 };
 
 const getThreatLevel = (score: number) => {
-    if (score >= 9) return { name: 'Yonko', color: 'text-red-400' };
-    if (score > 6) return { name: 'Warlord', color: 'text-purple-400' };
-    if (score > 3) return { name: 'Supernova', color: 'text-blue-400' };
+    if (score >= 9.5) return { name: 'Yonko', color: 'text-red-400' };
+    if (score >= 7) return { name: 'Warlord', color: 'text-purple-400' };
+    if (score >= 4) return { name: 'Supernova', color: 'text-blue-400' };
     return { name: 'Rookie', color: 'text-green-400' };
 };
 
@@ -791,153 +791,175 @@ export default function RoomPage({ roomId }: { roomId: string }) {
         </main>
       )}
 
-      {(phase === 'voting' || phase === 'result') && (
+      {phase === 'voting' && (
+         <main className="relative flex min-h-screen w-full flex-col items-center justify-center p-4 overflow-hidden">
+            <div className="relative w-[1200px] max-w-[95%] h-[700px]">
+                <Image src="/section.png" alt="Parchment" fill objectFit="contain" />
+                <div className="absolute inset-0 flex flex-col items-center py-10 px-20">
+                     <div className="relative mb-8">
+                        <Image src="/head.png" alt="Rate Crews" width={300} height={80} />
+                        <h1 className="absolute inset-0 flex items-center justify-center text-3xl font-bold" style={{background: "linear-gradient(180deg, #b7341d, #762112, #5a1a0f)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                            RATE CREWS
+                        </h1>
+                    </div>
+                    
+                    <div className="w-full space-y-12">
+                        {otherPlayers.map((player) => {
+                             const rating = playerRatings[player!.id] ?? 5;
+                             const threatLevel = getThreatLevel(rating);
+                            return (
+                           <div key={player!.id} className="w-full">
+                                <div className='flex items-center justify-between mb-4'>
+                                    <div className="relative">
+                                        <Image src="/head.png" alt="Crew Roster" width={240} height={60} />
+                                        <h3 className="absolute inset-0 flex items-center justify-center text-xl font-bold" style={{background: "linear-gradient(180deg, #ffd3a5, #6b451e, #472a0d)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                                            {`${player!.displayName}'s Roster`}
+                                        </h3>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className='flex items-center gap-2'>
+                                             <span className="text-[#9c6d43] font-bold text-sm">CREW LEVEL</span>
+                                             <Image className="rounded-[100px]" src="/tooltip-icon.png" alt="Tooltip" width={14} height={14} />
+                                        </div>
+                                        <div className='bg-[#cba47e] border-2 border-[#9c6d43] rounded-full px-4 py-1 flex items-center gap-2'>
+                                            <span className={cn('font-bold text-lg', threatLevel.color)}>{threatLevel.name}</span>
+                                            <span className='font-bold text-lg text-white'>{rating}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-8 gap-4 mb-4">
+                                    {ROLES.map((role) => {
+                                        const crewMember = playerCrews[player!.id]?.[role];
+                                        return (
+                                        <div key={role} className="w-full h-[140px] relative">
+                                            {crewMember ? (
+                                                <WantedPosterCard character={crewMember} onImageError={() => handleImageError(crewMember.info.name)} hasError={imageErrors[crewMember.info.name]}/>
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center bg-[#cba47e]/20 border-2 border-dashed border-[#9c6d43]/50 rounded-md text-[#9c6d43]/40 text-2xl font-bold">
+                                                ?
+                                                </div>
+                                            )}
+                                        </div>
+                                        );
+                                    })}
+                                </div>
+                                <div className="flex items-center gap-4 max-w-full mx-auto">
+                                    <span className="font-bold text-lg text-[#9c6d43]">0</span>
+                                    <Slider
+                                        defaultValue={[5]}
+                                        min={0}
+                                        max={10}
+                                        step={0.5}
+                                        onValueChange={([value]) => setPlayerRatings((prev) => ({...prev, [player!.id]: value, }))}
+                                        className="w-full"
+                                    />
+                                    <span className="font-bold text-lg text-[#9c6d43]">10</span>
+                                </div>
+                           </div>
+                        )})}
+                    </div>
+                    
+                    <button onClick={handleSubmitVotes} disabled={hasVoted} className="absolute bottom-10 right-20 bg-transparent border-none p-0 w-[260px] h-[70px] disabled:opacity-50">
+                        <Image src="/head.png" alt="Submit Votes" layout="fill" objectFit="contain"/>
+                        <span className="absolute inset-0 flex items-center font-bold justify-center text-xl" style={{ background: "linear-gradient(180deg, #ffd3a5, #6b451e, #472a0d)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                            {hasVoted ? 'VOTES SUBMITTED' : 'SUBMIT VOTES'}
+                        </span>
+                    </button>
+                    <p className="absolute bottom-2 right-20 text-xs text-[#9c6d43]">
+                       ({voters.size}/{players.length} pirates have voted)
+                  </p>
+                </div>
+            </div>
+            <div className="absolute bottom-[-100px] left-[-100px] rotate-[-15deg] opacity-40">
+                <Image src="/logo-colored.png" alt="App Logo" width={300} height={185} />
+            </div>
+             <div className="absolute bottom-6 right-10 text-sm font-bold">
+                <span style={{ background: "linear-gradient(180deg, #ffd3a5, #6b451e, #472a0d)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                    CREATED BY JOYBOY
+                </span>
+            </div>
+         </main>
+      )}
+
+      {phase === 'result' && (
         <div className="w-full h-full flex flex-col items-center justify-center p-4">
           <div className="w-full h-full animate-map-open bg-black/30 backdrop-blur-sm border-white/20 rounded-lg p-4 md:p-8 overflow-y-auto">
             <div className="text-center mb-8">
               <h1 className="text-3xl md:text-5xl font-headline text-white [text-shadow:_0_1px_10px_rgb(0_0_0_/_50%)]">
-                {phase === 'voting' ? 'Rate Their Crews!' : isSinglePlayer ? 'Your Assembled Crew' : 'Final Standings'}
+                {isSinglePlayer ? 'Your Assembled Crew' : 'Final Standings'}
               </h1>
               <p className="text-white/70 mt-2">
-                {phase === 'voting' ? 'Vote on which crew you think is the strongest.' : isSinglePlayer ? "You've assembled your crew! Save it or try again." : "The results are in! Here's how the crews stacked up."}
+                {isSinglePlayer ? "You've assembled your crew! Save it or try again." : "The results are in! Here's how the crews stacked up."}
               </p>
             </div>
 
-            {phase === 'voting' && (
-               <div className="space-y-8">
-               {otherPlayers.map((player) => (
-                   <div
-                     key={player!.id}
-                     className="p-4 rounded-lg bg-black/20 border border-white/10"
-                   >
-                     <h3 className="font-headline text-2xl mb-4 text-white/90">
-                       {`${player!.displayName}'s Crew`}
-                     </h3>
-                     <div className="grid grid-cols-4 md:grid-cols-8 gap-4 mb-6">
-                       {ROLES.map((role) => {
-                         const crewMember = playerCrews[player!.id]?.[role];
-                         const RoleIcon = roleIcons[role];
-                         return (
-                           <div
-                             key={role}
-                             className="flex flex-col items-center gap-1 text-center"
-                           >
-                             <div className="w-full h-[180px] relative">
-                               {crewMember ? (
-                                  <WantedPosterCard character={crewMember} onImageError={() => handleImageError(crewMember.info.name)} hasError={imageErrors[crewMember.info.name]}/>
-                               ) : (
-                                 <div className="w-full h-full flex items-center justify-center bg-black/20 border-2 border-dashed border-white/20 p-2 text-white/40 text-xl font-bold">
-                                   ?
-                                 </div>
-                               )}
-                             </div>
-                             <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-white/70 mt-1">
-                                <RoleIcon className="w-4 h-4" />
-                                <span>{role}</span>
-                            </div>
-                           </div>
-                         );
-                       })}
-                     </div>
-                     <div className="flex items-center gap-4 max-w-md mx-auto">
-                       <span className="text-white font-bold">1</span>
-                       <Slider
-                         defaultValue={[5]}
-                         min={1}
-                         max={10}
-                         step={1}
-                         onValueChange={([value]) =>
-                           setPlayerRatings((prev) => ({
-                             ...prev,
-                             [player!.id]: value,
-                           }))
-                         }
-                       />
-                       <span className="text-white font-bold">10</span>
-                     </div>
-                   </div>
-                 ))}
-             </div>
-            )}
-
-            {phase === 'result' && (
-                <div className="space-y-6">
-                  {sortedPlayers.map((player, index) => {
-                      const score = finalScores[player.id]?.avg ?? 0;
-                      const threatLevel = getThreatLevel(score);
-                      return (
-                      <div
-                        key={player.id}
-                        className="p-4 rounded-lg bg-black/20 border border-white/10 flex flex-col md:flex-row gap-6 items-center"
-                      >
-                         {!isSinglePlayer && (
-                            <div className="flex items-center gap-4">
-                              <span className="text-4xl font-bold font-headline text-yellow-500 w-12 text-center">
-                                #{index + 1}
-                              </span>
-                              <div className="text-center border-r px-4 border-yellow-800/30">
-                                <p className="text-5xl font-bold font-headline text-white">
-                                  {score.toFixed(1)}
-                                </p>
-                                <p className="text-sm text-white/60">Avg. Score</p>
-                              </div>
-                               <div className="text-center">
-                                <p className={cn("text-3xl font-bold font-headline", threatLevel.color)}>
-                                    {threatLevel.name}
-                                </p>
-                                <p className="text-sm text-white/60">Threat Level</p>
-                               </div>
-                            </div>
-                        )}
-                        <div className="flex-1">
-                          <h3 className="text-xl font-headline mb-4 text-white/90">
-                            {player.displayName}'s Crew {player.id === user.id && '(You)'}
-                          </h3>
-                          <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
-                            {ROLES.map((role) => {
-                              const crewMember = playerCrews[player.id]?.[role] || null;
-                               const RoleIcon = roleIcons[role];
-                              return (
-                                <div
-                                  key={role}
-                                  className="flex flex-col items-center gap-1 text-center"
-                                >
-                                  <div className="w-full h-[180px] relative">
-                                    {crewMember ? (
-                                       <WantedPosterCard character={crewMember} onImageError={() => handleImageError(crewMember.info.name)} hasError={imageErrors[crewMember.info.name]}/>
-                                    ) : (
-                                      <div className="w-full h-full flex items-center justify-center bg-black/20 border-2 border-dashed border-white/20 p-2 text-white/40 text-xl font-bold">
-                                        ?
-                                      </div>
-                                    )}
-                                  </div>
-                                   <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-white/70 mt-1">
-                                        <RoleIcon className="w-4 h-4" />
-                                        <span>{role}</span>
-                                    </div>
-                                </div>
-                              );
-                            })}
+            <div className="space-y-6">
+              {sortedPlayers.map((player, index) => {
+                  const score = finalScores[player.id]?.avg ?? 0;
+                  const threatLevel = getThreatLevel(score);
+                  return (
+                  <div
+                    key={player.id}
+                    className="p-4 rounded-lg bg-black/20 border border-white/10 flex flex-col md:flex-row gap-6 items-center"
+                  >
+                     {!isSinglePlayer && (
+                        <div className="flex items-center gap-4">
+                          <span className="text-4xl font-bold font-headline text-yellow-500 w-12 text-center">
+                            #{index + 1}
+                          </span>
+                          <div className="text-center border-r px-4 border-yellow-800/30">
+                            <p className="text-5xl font-bold font-headline text-white">
+                              {score.toFixed(1)}
+                            </p>
+                            <p className="text-sm text-white/60">Avg. Score</p>
                           </div>
+                           <div className="text-center">
+                            <p className={cn("text-3xl font-bold font-headline", threatLevel.color)}>
+                                {threatLevel.name}
+                            </p>
+                            <p className="text-sm text-white/60">Threat Level</p>
+                           </div>
                         </div>
+                    )}
+                    <div className="flex-1">
+                      <h3 className="text-xl font-headline mb-4 text-white/90">
+                        {player.displayName}'s Crew {player.id === user.id && '(You)'}
+                      </h3>
+                      <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
+                        {ROLES.map((role) => {
+                          const crewMember = playerCrews[player.id]?.[role] || null;
+                          const RoleIcon = roleIcons[role];
+                          return (
+                            <div
+                              key={role}
+                              className="flex flex-col items-center gap-1 text-center"
+                            >
+                              <div className="w-full h-[180px] relative">
+                                {crewMember ? (
+                                   <WantedPosterCard character={crewMember} onImageError={() => handleImageError(crewMember.info.name)} hasError={imageErrors[crewMember.info.name]}/>
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center bg-black/20 border-2 border-dashed border-white/20 p-2 text-white/40 text-xl font-bold">
+                                    ?
+                                  </div>
+                                )}
+                              </div>
+                               <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-white/70 mt-1">
+                                    <RoleIcon className="w-4 h-4" />
+                                    <span>{role}</span>
+                                </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                      )
-                    }
-                  )}
-                </div>
-            )}
+                    </div>
+                  </div>
+                  )
+                }
+              )}
+            </div>
             
             <div className="text-center mt-8 space-y-2">
-              {phase === 'voting' && !isSinglePlayer && (
-                <>
-                  <Button onClick={handleSubmitVotes} size="lg" disabled={hasVoted}>
-                    {hasVoted ? 'Votes Submitted' : 'Submit Votes'}
-                  </Button>
-                  <p className="text-sm text-white/60">
-                    ({voters.size}/{players.length} players have voted)
-                  </p>
-                </>
-              )}
               {phase === 'result' && (
                  <>
                   <Button onClick={handleSaveCrew} disabled={isSaving}>
