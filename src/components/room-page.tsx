@@ -29,6 +29,7 @@ import {
   Stethoscope,
   Hammer,
   Shuffle,
+  Check,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -39,6 +40,7 @@ import {
   DraftPick,
   Player,
   Room,
+  finishDrafting,
   randomizeCrew,
   selectCharacterForPlayer,
   submitVotes,
@@ -65,7 +67,7 @@ export type DraftedCharacterState = {
   id: string; // This should be the draftPick document ID
   info: Character;
   imageUrl: string;
-  role: Role;
+  role: Role | null;
   playerId: string;
 };
 
@@ -281,6 +283,11 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     () => (user ? playerCrews[user.uid] : null),
     [playerCrews, user]
   );
+
+  const myCrewIsFull = useMemo(() => {
+    if (!myCrew) return false;
+    return ROLES.every(role => myCrew[role] !== null);
+  }, [myCrew]);
   
   const sortedPlayersForDisplay = useMemo(() => {
     if (!user) return players;
@@ -297,32 +304,15 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     [players, user]
   );
 
-  const allCrewsFull = useMemo(() => {
-    if (Object.keys(playerCrews).length === 0 || players.length === 0)
-      return false;
-    if (players.length !== room?.playerCount) return false;
-
-    return Object.values(playerCrews).every(
-      (crew) => crew && Object.values(crew).every((member) => member !== null)
-    );
-  }, [playerCrews, players, room?.playerCount]);
-
   useEffect(() => {
     if (room?.status === 'voting') {
       setPhase('voting');
     } else if (room?.status === 'finished') {
       setPhase('result');
-    } else if (allCrewsFull && room?.status === 'drafting') {
-      const newStatus = isSinglePlayer ? 'finished' : 'voting';
-      if (newStatus !== room?.status) {
-        // To prevent multiple writes, only host updates status
-        if (user?.uid === room.hostId) {
-          updateRoomStatus(roomId, newStatus);
-        }
-      }
-      setPhase(newStatus);
+    } else {
+      setPhase('drafting');
     }
-  }, [allCrewsFull, room, isSinglePlayer, user, roomId]);
+  }, [room?.status]);
 
 
   const initializePool = async () => {
@@ -350,13 +340,18 @@ export default function RoomPage({ roomId }: { roomId: string }) {
 
     const imageUrl = await getCharImage(character.name);
     if(!user) return;
-    setDraftedCharacter({ id: 'new-draft', info: character, imageUrl, role: 'Captain' /* placeholder */, playerId: user.uid});
+    setDraftedCharacter({ id: 'new-draft', info: character, imageUrl, role: null , playerId: user.uid});
   };
 
   const handleDraft = () => {
-    if (draftedCharacter || !isMyTurn) return;
+    if (draftedCharacter || !isMyTurn || myCrewIsFull) return;
     drawCharacter();
   };
+  
+  const handleFinishDrafting = async () => {
+    if (!room || !user || !room.turnOrder) return;
+    await finishDrafting(roomId, user.uid, room.turnOrder, room.playerCount);
+  }
 
   const handleReroll = (e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -369,7 +364,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   };
 
   const assignCharacterToRole = async (role: Role) => {
-    if (!draftedCharacter || !room || !user || !room.turnOrder) return;
+    if (!draftedCharacter || !room || !user ) return;
 
     await selectCharacterForPlayer(
       roomId,
@@ -377,9 +372,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       role,
       draftedCharacter.info.name,
       draftedCharacter.info.description,
-      draftedCharacter.imageUrl,
-      room.turnOrder,
-      room.playerCount
+      draftedCharacter.imageUrl
     );
 
     setDraftedCharacter(null);
@@ -600,12 +593,12 @@ export default function RoomPage({ roomId }: { roomId: string }) {
              assignCharacterToRole(targetRole);
         }
         // If it's an existing character being moved to an empty slot
-        else if (draggedChar.id !== 'new-draft') {
+        else if (draggedChar.id !== 'new-draft' && draggedChar.role) {
             swapCharacterRoles(roomId, draggedChar.id, draggedChar.role, null, targetRole);
         }
     } else {
         // If dropping on an occupied slot, perform a swap
-        if (targetChar.playerId !== user?.uid) return;
+        if (targetChar.playerId !== user?.uid || !draggedChar.role) return;
         swapCharacterRoles(roomId, draggedChar.id, draggedChar.role, targetChar.id, targetChar.role);
     }
   };
@@ -697,7 +690,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                            {isMyTurn ? 'YOUR TURN!' : `${room?.players.find(p => p.id === room.currentPlayerId)?.displayName || 'Player'}'s Turn`}
                         </h2>
                         <p className="text-[#9c6d43] font-bold">
-                            {isMyTurn ? 'DRAFT A CHARACTER TO YOUR CREW' : 'Waiting for opponent...'}
+                            {isMyTurn ? (myCrewIsFull ? 'Your crew is full! Swap roles or finish drafting.' : 'DRAFT A CHARACTER TO YOUR CREW') : 'Waiting for opponent...'}
                         </p>
                     </div>
 
@@ -709,7 +702,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                             const draggedCharString = e.dataTransfer.getData('application/json');
                              if(draggedCharString && draftedCharacter) {
                                 const draggedChar: DraftedCharacterState = JSON.parse(draggedCharString);
-                                if(draggedChar.id !== 'new-draft') { // only allow dropping existing chars here
+                                if(draggedChar.id !== 'new-draft' && draggedChar.role) { // only allow dropping existing chars here
                                     swapCharacterRoles(roomId, draftedCharacter.id, null, draggedChar.id, draggedChar.role);
                                     setDraftedCharacter(draggedChar);
                                 }
@@ -733,7 +726,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                             <button
                                 className="w-full h-full max-w-sm mx-auto bg-[#cba47e]/20 border-4 border-dashed border-[#9c6d43]/50 rounded-lg flex flex-col items-center justify-center text-[#9c6d43]/60 hover:bg-[#cba47e]/30 transition-colors"
                                 onClick={handleDraft}
-                                disabled={!isMyTurn}
+                                disabled={!isMyTurn || myCrewIsFull}
                             >
                                 <Dices className="w-16 h-16" />
                                 <span className='font-bold text-xl mt-2'>DRAFT CHARACTER</span>
@@ -742,6 +735,14 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                     </div>
 
                     <div className="flex items-center justify-end gap-4 mt-auto w-full max-w-sm mx-auto">
+                        {myCrewIsFull && isMyTurn && (
+                            <button 
+                                onClick={handleFinishDrafting}
+                                className="bg-green-600 border-2 border-green-800 text-white font-bold px-8 py-2 rounded-full hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-lg flex items-center gap-2"
+                            >
+                                <Check /> DRAFTING DONE
+                            </button>
+                        )}
                         <button 
                             onClick={handleReroll} 
                             disabled={!draftedCharacter || !isMyTurn} 
@@ -939,14 +940,20 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                                         const crewMember = playerCrews[player!.id]?.[role];
                                         const RoleIcon = roleIcons[role];
                                         return (
-                                        <div key={role} className="w-full h-[140px] relative">
-                                            {crewMember ? (
-                                                <WantedPosterCard character={crewMember} onImageError={() => handleImageError(crewMember.info.name)} hasError={imageErrors[crewMember.info.name]}/>
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center bg-[#cba47e]/20 border-2 border-dashed border-[#9c6d43]/50 rounded-md text-[#9c6d43]/40 text-2xl font-bold">
-                                                ?
-                                                </div>
-                                            )}
+                                        <div key={role} className="w-full h-full relative flex flex-col items-center gap-1">
+                                            <div className="w-full h-[140px]">
+                                                {crewMember ? (
+                                                    <WantedPosterCard character={crewMember} onImageError={() => handleImageError(crewMember.info.name)} hasError={imageErrors[crewMember.info.name]}/>
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center bg-[#cba47e]/20 border-2 border-dashed border-[#9c6d43]/50 rounded-md text-[#9c6d43]/40 text-2xl font-bold">
+                                                    ?
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-[#9c6d43] mt-1">
+                                                <RoleIcon className="w-4 h-4" />
+                                                <span>{role}</span>
+                                            </div>
                                         </div>
                                         );
                                     })}

@@ -221,9 +221,7 @@ export async function selectCharacterForPlayer(
   role: string,
   characterName: string,
   characterDescription: string,
-  characterImageUrl: string,
-  turnOrder: string[],
-  playerCount: number
+  characterImageUrl: string
 ) {
   const draftPickRef = doc(collection(db, `rooms/${roomId}/draftPicks`));
 
@@ -234,17 +232,8 @@ export async function selectCharacterForPlayer(
     characterDescription,
     characterImageUrl,
   };
-
-  const batch = writeBatch(db);
-  batch.set(draftPickRef, draftPickData);
-
-  const roomRef = doc(db, 'rooms', roomId);
-  const currentIndex = turnOrder.indexOf(playerId);
-  const nextPlayerIndex = (currentIndex + 1) % turnOrder.length;
-  const nextPlayerId = turnOrder[nextPlayerIndex];
-  batch.update(roomRef, { currentPlayerId: nextPlayerId });
-
-  await batch.commit().catch((err) => {
+  
+  await setDoc(draftPickRef, draftPickData).catch((err) => {
     const permissionError = new FirestorePermissionError({
       path: `rooms/${roomId}/draftPicks`,
       operation: 'create',
@@ -255,10 +244,39 @@ export async function selectCharacterForPlayer(
   });
 }
 
+export async function finishDrafting(
+  roomId: string,
+  playerId: string,
+  turnOrder: string[],
+  playerCount: number
+) {
+  const roomRef = doc(db, 'rooms', roomId);
+  const currentIndex = turnOrder.indexOf(playerId);
+  const nextPlayerIndex = (currentIndex + 1) % turnOrder.length;
+  
+  // If the next player is the first player, everyone has had a turn
+  if (nextPlayerIndex === 0) {
+      const picksSnapshot = await getDocs(collection(db, `rooms/${roomId}/draftPicks`));
+      const allPicks = picksSnapshot.docs.map(doc => doc.data());
+      const totalPicksNeeded = playerCount * ROLES.length;
+
+      if (allPicks.length >= totalPicksNeeded) {
+        // All players have full crews, move to next phase
+        const newStatus = playerCount === 1 ? 'finished' : 'voting';
+        await updateDoc(roomRef, { status: newStatus, currentPlayerId: null });
+        return;
+      }
+  }
+  
+  const nextPlayerId = turnOrder[nextPlayerIndex];
+  await updateDoc(roomRef, { currentPlayerId: nextPlayerId });
+}
+
+
 export async function swapCharacterRoles(
   roomId: string,
   pick1Id: string,
-  pick1Role: Role | null,
+  pick1Role: Role,
   pick2Id: string | null,
   pick2Role: Role
 ) {
