@@ -46,7 +46,7 @@ export interface Player {
 export interface DraftPick {
   id: string;
   playerId: string;
-  role: string;
+  role: string | null;
   characterName: string;
   characterDescription: string;
   characterImageUrl: string;
@@ -221,10 +221,14 @@ export async function selectCharacterForPlayer(
   role: string,
   characterName: string,
   characterDescription: string,
-  characterImageUrl: string
+  characterImageUrl: string,
+  turnOrder: string[],
+  playerCount: number
 ) {
-  const draftPickRef = doc(collection(db, `rooms/${roomId}/draftPicks`));
+  const batch = writeBatch(db);
+  const roomRef = doc(db, 'rooms', roomId);
 
+  const draftPickRef = doc(collection(db, `rooms/${roomId}/draftPicks`));
   const draftPickData = {
     playerId,
     role,
@@ -232,8 +236,28 @@ export async function selectCharacterForPlayer(
     characterDescription,
     characterImageUrl,
   };
-  
-  await setDoc(draftPickRef, draftPickData).catch((err) => {
+  batch.set(draftPickRef, draftPickData);
+
+  // --- Start: Turn Progression Logic ---
+  const currentIndex = turnOrder.indexOf(playerId);
+  const nextPlayerIndex = (currentIndex + 1) % turnOrder.length;
+  const nextPlayerId = turnOrder[nextPlayerIndex];
+
+  // Check if all crews are full AFTER this pick
+  const picksSnapshot = await getDocs(collection(db, `rooms/${roomId}/draftPicks`));
+  const totalPicksAfterThisOne = picksSnapshot.docs.length + 1;
+  const totalPicksNeeded = playerCount * ROLES.length;
+
+  if (totalPicksAfterThisOne >= totalPicksNeeded) {
+    // All characters drafted, stop turns. Players can now swap roles.
+    batch.update(roomRef, { currentPlayerId: null });
+  } else {
+    // Continue to next player's turn
+    batch.update(roomRef, { currentPlayerId: nextPlayerId });
+  }
+  // --- End: Turn Progression Logic ---
+
+  await batch.commit().catch((err) => {
     const permissionError = new FirestorePermissionError({
       path: `rooms/${roomId}/draftPicks`,
       operation: 'create',
@@ -246,30 +270,25 @@ export async function selectCharacterForPlayer(
 
 export async function finishDrafting(
   roomId: string,
-  playerId: string,
-  turnOrder: string[],
-  playerCount: number
 ) {
   const roomRef = doc(db, 'rooms', roomId);
-  const currentIndex = turnOrder.indexOf(playerId);
-  const nextPlayerIndex = (currentIndex + 1) % turnOrder.length;
+  const roomSnap = await getDoc(roomRef);
+  if (!roomSnap.exists()) return;
   
-  // If the next player is the first player, everyone has had a turn
-  if (nextPlayerIndex === 0) {
-      const picksSnapshot = await getDocs(collection(db, `rooms/${roomId}/draftPicks`));
-      const allPicks = picksSnapshot.docs.map(doc => doc.data());
-      const totalPicksNeeded = playerCount * ROLES.length;
-
-      if (allPicks.length >= totalPicksNeeded) {
-        // All players have full crews, move to next phase
-        const newStatus = playerCount === 1 ? 'finished' : 'voting';
-        await updateDoc(roomRef, { status: newStatus, currentPlayerId: null });
-        return;
-      }
-  }
+  const room = roomSnap.data() as Room;
+  const newStatus = room.playerCount === 1 ? 'finished' : 'voting';
   
-  const nextPlayerId = turnOrder[nextPlayerIndex];
-  await updateDoc(roomRef, { currentPlayerId: nextPlayerId });
+  await updateDoc(roomRef, { 
+    status: newStatus,
+  }).catch((err) => {
+    const permissionError = new FirestorePermissionError({
+      path: roomRef.path,
+      operation: 'update',
+      requestResourceData: { status: newStatus },
+    });
+    errorEmitter.emit('permission-error', permissionError);
+    throw err;
+  });
 }
 
 
@@ -278,14 +297,14 @@ export async function swapCharacterRoles(
   pick1Id: string,
   pick1Role: Role,
   pick2Id: string | null,
-  pick2Role: Role
+  pick2Role: Role | null,
 ) {
     const batch = writeBatch(db);
     
     const pick1Ref = doc(db, `rooms/${roomId}/draftPicks`, pick1Id);
     batch.update(pick1Ref, { role: pick2Role });
 
-    if (pick2Id) {
+    if (pick2Id && pick1Role) {
       const pick2Ref = doc(db, `rooms/${roomId}/draftPicks`, pick2Id);
       batch.update(pick2Ref, { role: pick1Role });
     }
@@ -406,4 +425,3 @@ export async function updateRoomStatus(
     }
   );
 }
-    

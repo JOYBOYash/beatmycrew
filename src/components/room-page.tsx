@@ -283,12 +283,15 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     () => (user ? playerCrews[user.uid] : null),
     [playerCrews, user]
   );
-
-  const myCrewIsFull = useMemo(() => {
-    if (!myCrew) return false;
-    return ROLES.every(role => myCrew[role] !== null);
-  }, [myCrew]);
   
+  const allCrewsFull = useMemo(() => {
+    if (players.length !== room?.playerCount) return false;
+    return players.every(p => {
+        const crew = playerCrews[p.id];
+        return crew && ROLES.every(role => crew[role] !== null);
+    })
+  }, [playerCrews, players, room?.playerCount])
+
   const sortedPlayersForDisplay = useMemo(() => {
     if (!user) return players;
     return [...players].sort((a, b) => {
@@ -344,13 +347,13 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   };
 
   const handleDraft = () => {
-    if (draftedCharacter || !isMyTurn || myCrewIsFull) return;
+    if (draftedCharacter || !isMyTurn) return;
     drawCharacter();
   };
   
   const handleFinishDrafting = async () => {
-    if (!room || !user || !room.turnOrder) return;
-    await finishDrafting(roomId, user.uid, room.turnOrder, room.playerCount);
+    if (!room || !user ) return;
+    await finishDrafting(roomId);
   }
 
   const handleReroll = (e?: React.MouseEvent) => {
@@ -364,7 +367,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   };
 
   const assignCharacterToRole = async (role: Role) => {
-    if (!draftedCharacter || !room || !user ) return;
+    if (!draftedCharacter || !room || !user || !room.turnOrder) return;
 
     await selectCharacterForPlayer(
       roomId,
@@ -372,7 +375,9 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       role,
       draftedCharacter.info.name,
       draftedCharacter.info.description,
-      draftedCharacter.imageUrl
+      draftedCharacter.imageUrl,
+      room.turnOrder,
+      room.playerCount
     );
 
     setDraftedCharacter(null);
@@ -690,7 +695,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                            {isMyTurn ? 'YOUR TURN!' : `${room?.players.find(p => p.id === room.currentPlayerId)?.displayName || 'Player'}'s Turn`}
                         </h2>
                         <p className="text-[#9c6d43] font-bold">
-                            {isMyTurn ? (myCrewIsFull ? 'Your crew is full! Swap roles or finish drafting.' : 'DRAFT A CHARACTER TO YOUR CREW') : 'Waiting for opponent...'}
+                            {isMyTurn ? 'DRAFT A CHARACTER TO YOUR CREW' : 'Waiting for opponent...'}
                         </p>
                     </div>
 
@@ -723,10 +728,10 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                                 />
                             </div>
                         ) : (
-                            <button
+                             <button
                                 className="w-full h-full max-w-sm mx-auto bg-[#cba47e]/20 border-4 border-dashed border-[#9c6d43]/50 rounded-lg flex flex-col items-center justify-center text-[#9c6d43]/60 hover:bg-[#cba47e]/30 transition-colors"
                                 onClick={handleDraft}
-                                disabled={!isMyTurn || myCrewIsFull}
+                                disabled={!isMyTurn}
                             >
                                 <Dices className="w-16 h-16" />
                                 <span className='font-bold text-xl mt-2'>DRAFT CHARACTER</span>
@@ -735,7 +740,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                     </div>
 
                     <div className="flex items-center justify-between gap-4 mt-auto w-full max-w-sm mx-auto">
-                        {myCrewIsFull && isMyTurn && (
+                        {allCrewsFull && (
                              <button 
                                 onClick={handleFinishDrafting}
                                 className="flex items-center justify-center gap-2 rounded-full px-6 py-2 text-white font-bold text-lg shadow-lg hover:scale-105 transition-transform"
