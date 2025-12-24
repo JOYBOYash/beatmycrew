@@ -811,7 +811,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                 }
               `}
             </style>
-            <div className="relative w-[1600px] max-w-[95%] h-[900px]">
+            <div className="relative w-[1400px] max-w-[95%] h-[800px]">
                 <Image src="/section.png" alt="Parchment" fill objectFit="contain" />
                 <div className="absolute inset-0 flex flex-col items-center py-10 px-20">
                      <div className="relative mb-8">
