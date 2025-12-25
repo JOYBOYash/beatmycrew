@@ -328,7 +328,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   const initializePool = async () => {
     const fetchedChars = await fetchAllCharacters();
     setAllCharacters(fetchedChars);
-    setCharacterPool(generateCharacterPool(fetchedChars, 100));
+    setCharacterPool(generateCharacterPool(fetchedChars, 500));
   };
 
   useEffect(() => {
@@ -336,17 +336,25 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   }, []);
 
   const drawCharacter = async () => {
-    if (characterPool.length === 0) {
+    const currentCrewNames = Object.values(myCrew || {})
+        .filter(Boolean)
+        .map(member => member!.info.name);
+        
+    const availablePool = characterPool.filter(c => !currentCrewNames.includes(c.name));
+
+    if (availablePool.length === 0) {
       toast({
-        title: 'No more characters left in the pool!',
+        title: 'No more unique characters in the pool!',
         variant: 'destructive',
       });
       return;
     }
-    const newPool = [...characterPool];
-    const draftIndex = Math.floor(Math.random() * newPool.length);
-    const character = newPool.splice(draftIndex, 1)[0];
-    setCharacterPool(newPool);
+    
+    const draftIndex = Math.floor(Math.random() * availablePool.length);
+    const character = availablePool[draftIndex];
+    
+    // Remove the drafted character from the main pool to prevent re-drafting
+    setCharacterPool(prevPool => prevPool.filter(c => c.name !== character.name));
 
     const imageUrl = await getCharImage(character.name);
     if(!user) return;
@@ -862,7 +870,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                                     {ROLES.map((role) => {
                                         const crewMember = playerCrews[player!.id]?.[role];
                                         return (
-                                        <div key={role} className="w-full h-[140px] relative">
+                                        <div key={role} className="w-full h-[200px] relative">
                                             {crewMember ? (
                                                 <WantedPosterCard character={crewMember} onImageError={() => handleImageError(crewMember.info.name)} hasError={imageErrors[crewMember.info.name]}/>
                                             ) : (
@@ -918,8 +926,8 @@ export default function RoomPage({ roomId }: { roomId: string }) {
       {phase === 'result' && (
         <main className="relative flex min-h-screen w-full flex-col items-center justify-center p-4 overflow-hidden">
              <div className="relative w-[1600px] h-[900px] max-w-[95%]">
-                <Image src="/section.png" alt="Parchment" width={1600} height={1000} className="w-full h-auto" />
-                <div className="absolute inset-0 flex flex-col items-center py-12 px-20">
+                <Image src="/section.png" alt="Parchment" width={1200} height={600} className="w-full " />
+                <div className="absolute inset-0 flex flex-col items-center py-6 px-12">
                     <div className="relative mb-8">
                         <Image src="/head.png" alt="Crew Levels" width={300} height={80} />
                         <h1 className="absolute inset-0 flex items-center justify-center text-3xl font-bold" style={{background: "linear-gradient(180deg, #b7341d, #762112, #5a1a0f)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
@@ -931,7 +939,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                         {sortedPlayers.map((player) => {
                             const score = finalScores[player.id]?.avg ?? 0;
                             const threatLevel = getThreatLevel(score);
-                            const cardHeightClass = players.length === 1 ? 'h-[260px]' : players.length === 2 ? 'h-[220px]' : 'h-[180px]';
+                             const cardHeightClass = isSinglePlayer ? 'h-[260px]' : players.length === 2 ? 'h-[220px]' : 'h-[180px]';
 
                             return (
                                 <div key={player.id} className="w-full">
