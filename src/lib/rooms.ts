@@ -1,3 +1,4 @@
+
 'use client';
 
 import { getFirebaseConfig } from '@/firebase/config';
@@ -287,7 +288,7 @@ export async function finishDrafting(
 
         // If everyone else is ready, this player's click will finish the phase
         if (otherPlayersDone && allPlayersCount === room.playerCount) {
-            const newStatus = room.playerCount === 1 ? 'voting' : 'voting';
+            const newStatus = room.playerCount === 1 ? 'finished' : 'voting';
             transaction.update(roomRef, { status: newStatus });
         }
 
