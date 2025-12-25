@@ -1,4 +1,3 @@
-
 'use client';
 
 import { getFirebaseConfig } from '@/firebase/config';
@@ -264,13 +263,14 @@ export async function finishDrafting(
 ) {
     await runTransaction(db, async (transaction) => {
         const roomRef = doc(db, 'rooms', roomId);
+        const playerRef = doc(db, `rooms/${roomId}/players`, playerId);
         const playersCollectionRef = collection(db, `rooms/${roomId}/players`);
         
         // --- READS FIRST ---
         const roomSnap = await transaction.get(roomRef);
         if (!roomSnap.exists()) throw new Error("Room does not exist");
         const room = roomSnap.data() as Room;
-        
+
         const playersSnapshot = await getDocs(query(playersCollectionRef));
         const allPlayers = playersSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Player));
 
@@ -282,15 +282,14 @@ export async function finishDrafting(
         
         const allPlayersCount = allPlayers.length;
 
+        // --- WRITES LAST ---
+        transaction.update(playerRef, { isDraftingDone: true });
+
         // If everyone else is ready, this player's click will finish the phase
         if (otherPlayersDone && allPlayersCount === room.playerCount) {
-            const newStatus = room.playerCount === 1 ? 'finished' : 'voting';
-            // --- WRITES LAST ---
+            const newStatus = room.playerCount === 1 ? 'voting' : 'voting';
             transaction.update(roomRef, { status: newStatus });
         }
-        
-        const playerRef = doc(db, `rooms/${roomId}/players`, playerId);
-        transaction.update(playerRef, { isDraftingDone: true });
 
     }).catch((err) => {
       console.error("Finish drafting transaction failed: ", err);

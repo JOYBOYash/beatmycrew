@@ -306,6 +306,13 @@ export default function RoomPage({ roomId }: { roomId: string }) {
     () => players.filter((p) => p.id !== user?.uid),
     [players, user]
   );
+  
+  const playersToRate = useMemo(() => {
+    if (isSinglePlayer && user) {
+        return players.filter(p => p.id === user.uid);
+    }
+    return otherPlayers;
+  }, [isSinglePlayer, players, user, otherPlayers]);
 
   useEffect(() => {
     if (room?.status === 'voting') {
@@ -400,25 +407,16 @@ export default function RoomPage({ roomId }: { roomId: string }) {
   const handleSubmitVotes = async () => {
     if (!user || !room || hasVoted) return;
 
-    const votesToSubmit: Omit<Vote, 'id'>[] = otherPlayers.map((p) => ({
+    const votesToSubmit: Omit<Vote, 'id'>[] = playersToRate.map((p) => ({
       voterId: user.uid,
       targetPlayerId: p.id,
-      score: playerRatings[p.id] ?? 5,
+      score: playerRatings[p.id] ?? (isSinglePlayer ? 10 : 5),
     }));
 
-    // Add self-vote for single player mode to progress
-    if (isSinglePlayer) {
-      votesToSubmit.push({
-        voterId: user.uid,
-        targetPlayerId: user.uid,
-        score: playerRatings[user.uid] ?? 10,
-      });
-    }
-
-    if (votesToSubmit.length === 0 && !isSinglePlayer) {
+    if (votesToSubmit.length === 0) {
       toast({
         title: 'No ratings submitted.',
-        description: 'Please rate at least one crew.',
+        description: 'Please rate your crew.',
       });
       return;
     }
@@ -831,13 +829,13 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                      <div className="relative mb-8">
                         <Image src="/head.png" alt="Rate Crews" width={300} height={80} />
                         <h1 className="absolute inset-0 flex items-center justify-center text-3xl font-bold" style={{background: "linear-gradient(180deg, #b7341d, #762112, #5a1a0f)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                            RATE CREWS
+                           {isSinglePlayer ? 'RATE YOUR CREW' : 'RATE CREWS'}
                         </h1>
                     </div>
                     
                     <div className="w-full flex-1 space-y-12 overflow-y-auto px-10">
-                        {otherPlayers.map((player) => {
-                             const rating = playerRatings[player!.id] ?? 5;
+                        {playersToRate.map((player) => {
+                             const rating = playerRatings[player!.id] ?? (isSinglePlayer ? 10 : 5);
                              const threatLevel = getThreatLevel(rating);
                             return (
                            <div key={player!.id} className="w-full">
@@ -879,7 +877,7 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                                 <div className="flex items-center gap-4 max-w-full mx-auto">
                                     <span className="font-bold text-lg text-[#9c6d43]">0</span>
                                     <Slider
-                                        defaultValue={[5]}
+                                        defaultValue={[isSinglePlayer ? 10 : 5]}
                                         min={0}
                                         max={10}
                                         step={0.5}
@@ -899,9 +897,11 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                             {hasVoted ? 'VOTES SUBMITTED' : 'SUBMIT VOTES'}
                         </span>
                     </button>
-                    <p className="absolute bottom-2 right-20 text-xs text-[#9c6d43]">
-                       ({voters.size}/{players.length} pirates have voted)
-                  </p>
+                    {!isSinglePlayer && (
+                        <p className="absolute bottom-2 right-20 text-xs text-[#9c6d43]">
+                            ({voters.size}/{players.length} pirates have voted)
+                        </p>
+                    )}
                 </div>
             </div>
             <div className="absolute bottom-[-100px] left-[-100px] rotate-[-15deg] opacity-40">
@@ -919,11 +919,11 @@ export default function RoomPage({ roomId }: { roomId: string }) {
         <main className="relative flex min-h-screen w-full flex-col items-center justify-center p-4 overflow-hidden">
              <div className="relative w-[1600px] h-[900px] max-w-[95%]">
                 <Image src="/section.png" alt="Parchment" width={1600} height={1000} className="w-full h-auto" />
-                <div className="absolute inset-0 flex flex-col items-center py-12 px-34">
+                <div className="absolute inset-0 flex flex-col items-center py-12 px-20">
                     <div className="relative mb-8">
                         <Image src="/head.png" alt="Crew Levels" width={300} height={80} />
                         <h1 className="absolute inset-0 flex items-center justify-center text-3xl font-bold" style={{background: "linear-gradient(180deg, #b7341d, #762112, #5a1a0f)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                            CREW LEVELS
+                           {isSinglePlayer ? 'YOUR CREW' : 'CREW LEVELS'}
                         </h1>
                     </div>
                     
@@ -942,15 +942,17 @@ export default function RoomPage({ roomId }: { roomId: string }) {
                                                 {`${player.displayName}'s Roster`}
                                             </h3>
                                         </div>
-                                        <div className="flex items-center gap-4">
-                                            <div className='flex items-center gap-2'>
-                                                <span className="text-[#9c6d43] font-bold text-sm">CREW LEVEL</span>
-                                                <Image className="rounded-[100px]" src="/tooltip-icon.png" alt="Tooltip" width={14} height={14} />
+                                        {!isSinglePlayer && (
+                                            <div className="flex items-center gap-4">
+                                                <div className='flex items-center gap-2'>
+                                                    <span className="text-[#9c6d43] font-bold text-sm">CREW LEVEL</span>
+                                                    <Image className="rounded-[100px]" src="/tooltip-icon.png" alt="Tooltip" width={14} height={14} />
+                                                </div>
+                                                <div className='rounded-full px-5 py-2 flex items-center justify-center text-white font-bold text-lg' style={{ background: 'linear-gradient(180deg, #b7341d, #762112, #5a1a0f)' }}>
+                                                    {threatLevel.name.toUpperCase()}
+                                                </div>
                                             </div>
-                                            <div className='rounded-full px-5 py-2 flex items-center justify-center text-white font-bold text-lg' style={{ background: 'linear-gradient(180deg, #b7341d, #762112, #5a1a0f)' }}>
-                                                {threatLevel.name.toUpperCase()}
-                                            </div>
-                                        </div>
+                                        )}
                                     </div>
 
                                     <div className="grid grid-cols-8 gap-4">
